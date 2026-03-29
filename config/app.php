@@ -56,6 +56,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Registration Key
+    |--------------------------------------------------------------------------
+    |
+    | This secret key protects the public admin registration endpoint
+    | (/register-admin). Set ADMIN_REGISTER_KEY in your .env file.
+    |
+    */
+    'admin_register_key' => env('ADMIN_REGISTER_KEY', ''),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

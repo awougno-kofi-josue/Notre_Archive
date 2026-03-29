@@ -86,6 +86,49 @@ class RegisteredUserController extends Controller
             ->with('success', 'Nouvel administrateur cree avec succes.');
     }
 
+    /**
+     * Formulaire public de creation admin (protege par cle secrete).
+     */
+    public function createPublicAdmin(): View
+    {
+        return view('auth.register-admin');
+    }
+
+    /**
+     * Creation d'un admin via route publique securisee.
+     */
+    public function storePublicAdmin(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'confirmed', Password::defaults()],
+            'admin_key' => ['required', 'string'],
+        ]);
+
+        $expectedKey = (string) config('app.admin_register_key', '');
+        $givenKey = (string) $request->input('admin_key');
+
+        if ($expectedKey === '' || ! hash_equals($expectedKey, $givenKey)) {
+            return back()
+                ->withErrors(['admin_key' => 'Cle admin invalide.'])
+                ->withInput($request->except(['password', 'password_confirmation', 'admin_key']));
+        }
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'is_admin' => true,
+            'can_manage_documents' => true,
+        ]);
+
+        event(new Registered($user));
+        Auth::login($user);
+
+        return redirect()->route('admin.dashboard');
+    }
+
     // -------------------------------
     // API Routes
     // -------------------------------
