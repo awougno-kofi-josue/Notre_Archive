@@ -23,7 +23,7 @@ COPY . .
 
 # Installation de Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --no-scripts --optimize-autoloader
 
 # On donne les permissions aux dossiers de stockage
 RUN chown -R www-data:www-data storage bootstrap/cache
