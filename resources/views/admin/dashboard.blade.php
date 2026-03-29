@@ -134,6 +134,16 @@
                     </a>
                 </div>
 
+                {{-- Creation admin --}}
+                <div class="col-sm-6 col-lg-4">
+                    <a href="{{ route('admin.users.create-admin') }}" class="stat-card">
+                        <div class="stat-icon"><i class="bi bi-person-plus"></i></div>
+                        <div class="stat-label">Creer admin</div>
+                        <div class="stat-count" style="font-size:2rem;">+</div>
+                        <div class="stat-action">Ajouter <i class="bi bi-arrow-right"></i></div>
+                    </a>
+                </div>
+
                 {{-- Messages --}}
                 <div class="col-sm-6 col-lg-4">
                     <a href="{{ route('admin.messages.index') }}" class="stat-card">

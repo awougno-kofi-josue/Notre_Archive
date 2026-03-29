@@ -51,6 +51,41 @@ class RegisteredUserController extends Controller
         return redirect()->route('dashboard');
     }
 
+    /**
+     * Affiche le formulaire de creation d'un compte admin.
+     * Accessible uniquement depuis l'espace admin.
+     */
+    public function createAdmin(): View
+    {
+        return view('admin.users.create-admin');
+    }
+
+    /**
+     * Cree un nouvel administrateur.
+     */
+    public function storeAdmin(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        $admin = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'is_admin' => true,
+            'can_manage_documents' => true,
+        ]);
+
+        event(new Registered($admin));
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', 'Nouvel administrateur cree avec succes.');
+    }
+
     // -------------------------------
     // API Routes
     // -------------------------------
@@ -64,14 +99,13 @@ class RegisteredUserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|confirmed|min:6',
-            'is_admin' => 'boolean',
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
-            'is_admin' => $request->is_admin ?? false,
+            'is_admin' => false,
         ]);
 
         $token = $user->createToken('api_token')->plainTextToken;

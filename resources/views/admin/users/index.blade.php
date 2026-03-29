@@ -13,13 +13,18 @@
                     Liste des <span style="color:var(--gold);">utilisateurs</span>
                 </h1>
             </div>
-            <div style="display:flex;align-items:center;gap:.6rem;
-                        background:rgba(39,174,96,.12);border:1px solid rgba(39,174,96,.3);
-                        border-radius:30px;padding:.45rem 1.1rem;">
-                <span class="af-online-dot"></span>
-                <span style="font-size:.78rem;font-weight:600;color:#27ae60;letter-spacing:.06em;text-transform:uppercase;">
-                    {{ $onlineUsersCount }} en ligne
-                </span>
+            <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;justify-content:flex-end;">
+                <a href="{{ route('admin.users.create-admin') }}" class="af-btn af-btn-primary af-hero-action">
+                    <i class="bi bi-person-plus"></i> Creer admin
+                </a>
+                <div style="display:flex;align-items:center;gap:.6rem;
+                            background:rgba(39,174,96,.12);border:1px solid rgba(39,174,96,.3);
+                            border-radius:30px;padding:.45rem 1.1rem;">
+                    <span class="af-online-dot"></span>
+                    <span style="font-size:.78rem;font-weight:600;color:#27ae60;letter-spacing:.06em;text-transform:uppercase;">
+                        {{ $onlineUsersCount }} en ligne
+                    </span>
+                </div>
             </div>
         </div>
     </div>

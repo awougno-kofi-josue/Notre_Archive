@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\NiveauAdminController;
 use App\Http\Controllers\Admin\ParcoursAdminController;
 use App\Http\Controllers\Admin\UserAdminController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ProfileController;
@@ -86,6 +87,8 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
     Route::resource('niveaux', NiveauAdminController::class)->except('show');
     Route::get('/users', [UserAdminController::class, 'index'])->name('users.index');
     Route::patch('/users/{user}/document-access', [UserAdminController::class, 'toggleDocumentAccess'])->name('users.document-access.toggle');
+    Route::get('/users/create-admin', [RegisteredUserController::class, 'createAdmin'])->name('users.create-admin');
+    Route::post('/users/create-admin', [RegisteredUserController::class, 'storeAdmin'])->name('users.store-admin');
 
     Route::get('/messages', function () {
         $messages = Message::latest()->paginate(10);
