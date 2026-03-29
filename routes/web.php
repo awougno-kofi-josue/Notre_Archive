@@ -33,6 +33,8 @@ Route::get('/apropos', function () {
     return view('apropos');
 })->name('apropos');
 
+Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
+
 /*
 |--------------------------------------------------------------------------
 | Dashboard utilisateur
@@ -58,7 +60,7 @@ Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
-    Route::resource('documents', DocumentController::class);
+    Route::resource('documents', DocumentController::class)->except(['index', 'show', 'edit', 'update']);
     Route::get('/documents/{id}/view', [DocumentController::class, 'view'])->name('documents.view');
     Route::get('/documents/{id}/download', [DocumentController::class, 'download'])->name('documents.download');
 

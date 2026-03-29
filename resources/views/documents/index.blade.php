@@ -46,20 +46,6 @@
             transition:border-color .2s;
         }
         .af-select:focus { border-color:var(--gold); }
-        .af-btn-filter {
-            background-color:var(--navy);
-            color:#fff;
-            border:none;
-            border-radius:3px;
-            padding:.5rem 1.2rem;
-            font-size:.8rem;
-            font-weight:600;
-            letter-spacing:.06em;
-            text-transform:uppercase;
-            cursor:pointer;
-            transition:background .2s;
-        }
-        .af-btn-filter:hover { background-color:#1b3a6b; }
         .af-btn-add {
             background-color:var(--gold);
             color:var(--navy);
@@ -197,15 +183,21 @@
                     Liste des <span style="color:var(--gold);">documents</span>
                 </h1>
             </div>
-            <a href="{{ route('documents.create') }}" class="af-btn-add">
-                <i class="bi bi-plus-lg"></i> Ajouter un document
-            </a>
+            @auth
+                <a href="{{ route('documents.create') }}" class="af-btn-add">
+                    <i class="bi bi-plus-lg"></i> Ajouter un document
+                </a>
+            @else
+                <a href="{{ route('login') }}" class="af-btn-add">
+                    <i class="bi bi-box-arrow-in-right"></i> Se connecter
+                </a>
+            @endauth
         </div>
     </div>
 
     <div class="af-filter-bar">
         <div class="container">
-            <form method="GET" action="{{ route('documents.index') }}"
+            <form id="documents-filter-form" method="GET" action="{{ route('documents.index') }}"
                   style="display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; font-family:'DM Sans',sans-serif;">
                 <select name="parcours_id" class="af-select">
                     <option value="">Tous les parcours</option>
@@ -235,10 +227,6 @@
                         @endforeach
                     </select>
                 @endif
-
-                <button type="submit" class="af-btn-filter">
-                    <i class="bi bi-funnel me-1"></i> Filtrer
-                </button>
 
                 @if(request('parcours_id') || request('annee_id') || request('user_id'))
                 <a href="{{ route('documents.index') }}"
@@ -280,12 +268,21 @@
                         </div>
                         <p class="doc-desc">{{ $doc->description }}</p>
                         <div class="doc-actions">
-                            <a href="{{ route('documents.view', $doc->id) }}" target="_blank" class="doc-btn doc-btn-open">
-                                <i class="bi bi-eye"></i> Ouvrir
-                            </a>
-                            <a href="{{ route('documents.download', $doc->id) }}" class="doc-btn doc-btn-dl">
-                                <i class="bi bi-download"></i> Telecharger
-                            </a>
+                            @auth
+                                <a href="{{ route('documents.view', $doc->id) }}" target="_blank" class="doc-btn doc-btn-open">
+                                    <i class="bi bi-eye"></i> Ouvrir
+                                </a>
+                                <a href="{{ route('documents.download', $doc->id) }}" class="doc-btn doc-btn-dl">
+                                    <i class="bi bi-download"></i> Telecharger
+                                </a>
+                            @else
+                                <a href="{{ route('documents.view', $doc->id) }}" class="doc-btn doc-btn-open">
+                                    <i class="bi bi-lock"></i> Connexion requise
+                                </a>
+                                <a href="{{ route('documents.download', $doc->id) }}" class="doc-btn doc-btn-dl">
+                                    <i class="bi bi-download"></i> Telecharger
+                                </a>
+                            @endauth
                             @can('delete', $doc)
                                 <form method="POST" action="{{ route('documents.destroy', $doc) }}" onsubmit="return confirm('Supprimer ce document ?');">
                                     @csrf
@@ -313,4 +310,19 @@
             </div>
         </div>
     </div>
+
+    <script>
+        (function () {
+            const form = document.getElementById('documents-filter-form');
+            if (!form) {
+                return;
+            }
+
+            form.querySelectorAll('select').forEach((select) => {
+                select.addEventListener('change', function () {
+                    form.submit();
+                });
+            });
+        })();
+    </script>
 </x-app-layout>
