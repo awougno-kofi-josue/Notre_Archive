@@ -30,3 +30,10 @@ RUN chown -R www-data:www-data storage bootstrap/cache
 
 # Port utilisé par Render
 EXPOSE 80
+# ... (garde tout le reste du Dockerfile identique) ...
+
+# On s'assure que le dossier storage a les bons droits
+RUN chmod -R 775 storage bootstrap/cache
+
+# Commande magique pour migrer ET lancer le serveur
+CMD php artisan migrate --force && php artisan config:cache && php artisan route:cache && apache2-foreground
