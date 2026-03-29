@@ -3,12 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use CloudinaryLabs\CloudinaryLaravel\MediaAlly; // Importation du Trait
 
 class Document extends Model
 {
-    use MediaAlly; // <--- AJOUTE CETTE LIGNE ICI pour activer Cloudinary
-
     protected $fillable = [
         'titre', 
         'description', 
