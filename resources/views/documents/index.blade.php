@@ -245,6 +245,11 @@
                     <i class="bi bi-check-circle me-1"></i>{{ session('success') }}
                 </div>
             @endif
+            @if(session('error'))
+                <div class="af-flash" style="border-color:rgba(192,57,43,.35); border-left-color:#c0392b;">
+                    <i class="bi bi-exclamation-circle me-1"></i>{{ session('error') }}
+                </div>
+            @endif
 
             <div class="row g-4">
                 @forelse($documents as $doc)

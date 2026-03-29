@@ -3,11 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use CloudinaryLabs\CloudinaryLaravel\MediaAlly; // Importation du Trait
 
 class Document extends Model
 {
-    protected $fillable = ['titre', 'description', 'fichier', 'niveau_id', 'parcours_id', 'user_id'];
+    use MediaAlly; // <--- AJOUTE CETTE LIGNE ICI pour activer Cloudinary
 
+    protected $fillable = [
+        'titre', 
+        'description', 
+        'fichier', 
+        'niveau_id', 
+        'parcours_id', 
+        'user_id'
+    ];
+    
     public function niveau()
     {
         return $this->belongsTo(Niveau::class);
