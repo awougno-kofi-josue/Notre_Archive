@@ -2,7 +2,8 @@
 FROM php:8.2-apache
 
 # Installation des dépendances système pour PostgreSQL et le reste
-RUN apt-get update && apt-get install -p -y \
+# Installation des dépendances système pour PostgreSQL et le reste
+RUN apt-get update && apt-get install -y \
     libpq-dev \
     libpng-dev \
     zip \
