@@ -36,7 +36,7 @@
             <div>
                 <div class="af-footer-brand mb-1">
                     <i class="bi bi-archive me-1" style="color:var(--gold,#c9a84c);"></i>
-                    Archive <span>Faculté</span>
+                    Notre <span>Archive</span>
                 </div>
                 <div style="font-size:.75rem;">
                     &copy; {{ date('Y') }} Tous droits réservés.

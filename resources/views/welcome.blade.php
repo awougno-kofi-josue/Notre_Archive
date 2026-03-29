@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Archive Faculté</title>
+    <title>Notre Archive</title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -332,7 +332,7 @@
 <nav class="navbar navbar-expand-lg navbar-custom">
     <div class="container">
         <a class="navbar-brand navbar-brand-text" href="#">
-            <i class="bi bi-archive me-2" style="color: var(--gold);"></i>Archive <span>Faculté</span>
+            <i class="bi bi-archive me-2" style="color: var(--gold);"></i>Notre <span>Archive</span>
         </a>
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -507,7 +507,7 @@
 {{-- ── FOOTER ── --}}
 <footer>
     <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-        <span>&copy; {{ date('Y') }} Archive Faculté — Tous droits réservés.</span>
+        <span>&copy; {{ date('Y') }} Notre Archive — Tous droits réservés.</span>
         <span>
             <a href="#">Mentions légales</a> &nbsp;·&nbsp;
             <a href="#">Contact</a>

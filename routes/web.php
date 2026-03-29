@@ -85,6 +85,7 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
     Route::resource('parcours', ParcoursAdminController::class)->except('show');
     Route::resource('niveaux', NiveauAdminController::class)->except('show');
     Route::get('/users', [UserAdminController::class, 'index'])->name('users.index');
+    Route::patch('/users/{user}/document-access', [UserAdminController::class, 'toggleDocumentAccess'])->name('users.document-access.toggle');
 
     Route::get('/messages', function () {
         $messages = Message::latest()->paginate(10);

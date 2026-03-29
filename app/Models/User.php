@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'password',
         'is_admin',
+        'can_manage_documents',
         'last_seen_at',
     ];
 
@@ -36,7 +37,14 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
+            'can_manage_documents' => 'boolean',
             'last_seen_at' => 'datetime',
         ];
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(Document::class);
     }
 }

@@ -1,5 +1,5 @@
 {{--
-    Application Logo — Archive Faculté
+    Application Logo — Notre Archive
     Usage : <x-application-logo class="h-9 w-auto" />
 --}}
 <svg {{ $attributes }} viewBox="0 0 160 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -15,10 +15,10 @@
           font-size="15"
           font-weight="700"
           letter-spacing="0.3"
-          fill="currentColor">Archive</text>
-    <text x="104" y="27"
+          fill="currentColor">Notre</text>
+    <text x="84" y="27"
           font-family="Georgia, 'Times New Roman', serif"
           font-size="15"
           font-weight="400"
-          fill="#c9a84c"> Faculté</text>
+          fill="#c9a84c"> Archive</text>
 </svg>

@@ -13,7 +13,6 @@
                     Liste des <span style="color:var(--gold);">utilisateurs</span>
                 </h1>
             </div>
-            {{-- badge en ligne --}}
             <div style="display:flex;align-items:center;gap:.6rem;
                         background:rgba(39,174,96,.12);border:1px solid rgba(39,174,96,.3);
                         border-radius:30px;padding:.45rem 1.1rem;">
@@ -28,6 +27,12 @@
     <div class="af-body">
         <div class="container">
             <div class="af-card">
+                @if(session('success'))
+                    <div class="af-alert-success">
+                        <i class="bi bi-check-circle"></i>
+                        <span>{{ session('success') }}</span>
+                    </div>
+                @endif
 
                 <div class="table-responsive">
                     <table class="af-table">
@@ -35,9 +40,12 @@
                             <tr>
                                 <th>Utilisateur</th>
                                 <th>Email</th>
-                                <th>Rôle</th>
+                                <th>Role</th>
+                                <th>Documents</th>
+                                <th>Droits documents</th>
                                 <th>Statut</th>
-                                <th>Dernière activité</th>
+                                <th>Derniere activite</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -46,7 +54,6 @@
                                 $isOnline = $user->last_seen_at && $user->last_seen_at->gte($onlineLimit);
                             @endphp
                             <tr>
-                                {{-- Avatar + Nom --}}
                                 <td>
                                     <div style="display:flex;align-items:center;gap:.75rem;">
                                         <div style="
@@ -66,37 +73,64 @@
 
                                 <td>
                                     @if($user->is_admin)
-                                    <span class="af-badge-admin">Admin</span>
+                                        <span class="af-badge-admin">Admin</span>
                                     @else
-                                    <span class="af-badge-user">Utilisateur</span>
+                                        <span class="af-badge-user">Utilisateur</span>
+                                    @endif
+                                </td>
+
+                                <td style="font-weight:600;">{{ $user->documents_count }}</td>
+
+                                <td>
+                                    @if($user->is_admin)
+                                        <span class="af-badge-admin">Total</span>
+                                    @elseif($user->can_manage_documents)
+                                        <span class="af-badge-online">Autorise</span>
+                                    @else
+                                        <span class="af-badge-offline">Standard</span>
                                     @endif
                                 </td>
 
                                 <td>
                                     @if($isOnline)
-                                    <span class="af-badge-online">
-                                        <span class="af-online-dot" style="width:6px;height:6px;margin-right:.3rem;"></span>
-                                        Connecté
-                                    </span>
+                                        <span class="af-badge-online">
+                                            <span class="af-online-dot" style="width:6px;height:6px;margin-right:.3rem;"></span>
+                                            Connecte
+                                        </span>
                                     @else
-                                    <span class="af-badge-offline">Hors ligne</span>
+                                        <span class="af-badge-offline">Hors ligne</span>
                                     @endif
                                 </td>
 
                                 <td style="color:var(--slate);font-size:.82rem;">
                                     @if($user->last_seen_at)
-                                    <i class="bi bi-clock me-1" style="color:var(--gold);"></i>
-                                    {{ $user->last_seen_at->diffForHumans() }}
+                                        <i class="bi bi-clock me-1" style="color:var(--gold);"></i>
+                                        {{ $user->last_seen_at->diffForHumans() }}
                                     @else
-                                    <span style="color:#c0c0c0;">—</span>
+                                        <span style="color:#c0c0c0;">-</span>
+                                    @endif
+                                </td>
+
+                                <td>
+                                    @if($user->is_admin)
+                                        <span style="font-size:.78rem;color:var(--slate);">Controle total</span>
+                                    @else
+                                        <form method="POST" action="{{ route('admin.users.document-access.toggle', $user) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="af-btn af-btn-sm {{ $user->can_manage_documents ? 'af-btn-warning' : 'af-btn-navy' }}">
+                                                <i class="bi {{ $user->can_manage_documents ? 'bi-lock-fill' : 'bi-unlock-fill' }}"></i>
+                                                {{ $user->can_manage_documents ? 'Retirer acces' : 'Donner acces' }}
+                                            </button>
+                                        </form>
                                     @endif
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="af-table-empty">
+                                <td colspan="8" class="af-table-empty">
                                     <i class="bi bi-people"></i>
-                                    Aucun utilisateur trouvé.
+                                    Aucun utilisateur trouve.
                                 </td>
                             </tr>
                             @endforelse
@@ -107,7 +141,6 @@
                 <div class="mt-4">
                     {{ $users->links() }}
                 </div>
-
             </div>
         </div>
     </div>

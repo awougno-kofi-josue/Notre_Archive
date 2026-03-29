@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Document;
 use App\Models\Niveau;
 use App\Models\Parcours;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -20,8 +21,17 @@ class DocumentController extends Controller
     {
         $parcoursList = Parcours::all();
         $anneesList = Niveau::with('parcours')->get();
+        $usersList = collect();
+        $canFilterByUser = (bool) ($request->user()?->is_admin || $request->user()?->can_manage_documents);
 
-        $query = Document::with(['parcours', 'niveau']);
+        if ($canFilterByUser) {
+            $usersList = User::query()
+                ->select('id', 'name')
+                ->orderBy('name')
+                ->get();
+        }
+
+        $query = Document::with(['parcours', 'niveau', 'user']);
 
         if ($request->filled('parcours_id')) {
             $query->where('parcours_id', $request->parcours_id);
@@ -31,9 +41,13 @@ class DocumentController extends Controller
             $query->where('niveau_id', $request->annee_id);
         }
 
+        if ($canFilterByUser && $request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
         $documents = $query->paginate(9)->withQueryString();
 
-        return view('documents.index', compact('documents', 'parcoursList', 'anneesList'));
+        return view('documents.index', compact('documents', 'parcoursList', 'anneesList', 'usersList', 'canFilterByUser'));
     }
 
     public function create()
@@ -69,6 +83,7 @@ class DocumentController extends Controller
             'fichier' => $path,
             'niveau_id' => $validated['niveau_id'],
             'parcours_id' => $validated['parcours_id'],
+            'user_id' => $request->user()?->id,
         ]);
 
         $message = $compressed
@@ -93,9 +108,18 @@ class DocumentController extends Controller
         //
     }
 
-    public function destroy(string $id)
+    public function destroy(Document $document)
     {
-        //
+        $this->authorize('delete', $document);
+
+        $disk = Storage::disk('public');
+        if ($document->fichier && $disk->exists($document->fichier)) {
+            $disk->delete($document->fichier);
+        }
+
+        $document->delete();
+
+        return redirect()->route('documents.index')->with('success', 'Document supprime avec succes.');
     }
 
     public function download(string $id)
@@ -152,6 +176,7 @@ class DocumentController extends Controller
             'fichier' => $path,
             'niveau_id' => $validated['niveau_id'],
             'parcours_id' => $validated['parcours_id'],
+            'user_id' => $request->user()?->id,
         ]);
 
         return response()->json([

@@ -98,7 +98,7 @@
                 color: #fff;
                 line-height: 1.15;
                 margin-bottom: .75rem;
-            ">À propos de l'<span style="color: var(--gold);">Archive</span></h1>
+            ">À propos de <span style="color: var(--gold);">Notre Archive</span></h1>
             <p style="color: rgba(255,255,255,.55); font-size: 1rem; max-width: 500px; margin: 0;">
                 Tout ce que vous devez savoir sur notre mission et nos fonctionnalités.
             </p>
@@ -115,7 +115,7 @@
                     <div class="af-card" style="border-left: 4px solid var(--gold);">
                         <span class="af-badge mb-3 d-inline-block">Notre mission</span>
                         <p style="font-size: 1.05rem; color: var(--slate); line-height: 1.75; margin: 0;">
-                            Bienvenue sur <strong style="color: var(--navy);">Archive Faculté</strong>.
+                            Bienvenue sur <strong style="color: var(--navy);">Notre Archive</strong>.
                             Ce site permet de gérer les documents et les parcours des étudiants de manière
                             simple et efficace. Notre objectif est de faciliter l'accès aux ressources
                             pédagogiques et d'améliorer l'organisation académique pour tous.
