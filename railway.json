@@ -1,7 +1,7 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "deploy": {
-    "startCommand": "php artisan config:clear && php artisan migrate --force && php artisan optimize && vendor/bin/heroku-php-apache2 public/",
+    "startCommand": "sleep 5 && php artisan migrate --force || true && php artisan optimize && vendor/bin/heroku-php-apache2 public/",
     "healthcheckPath": "/up",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
