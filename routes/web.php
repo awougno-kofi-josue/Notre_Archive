@@ -1,24 +1,21 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ParcoursController;
-use App\Http\Controllers\AnneeController;
-use App\Http\Controllers\DocumentController;
-use App\Http\Controllers\ContactController;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Admin\ParcoursAdminController;
 use App\Http\Controllers\Admin\NiveauAdminController;
-use App\Http\Controllers\Admin\MessageAdminController;
+use App\Http\Controllers\Admin\ParcoursAdminController;
+use App\Http\Controllers\Admin\UserAdminController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\ProfileController;
 use App\Models\Document;
-use App\Models\Parcours;
-use App\Models\Niveau;
-use App\Models\User;
 use App\Models\Message;
+use App\Models\Niveau;
+use App\Models\Parcours;
+use App\Models\User;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Page d'accueil et contact
+| Pages publiques
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
@@ -37,7 +34,7 @@ Route::get('/apropos', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Tableau de bord utilisateur
+| Dashboard utilisateur
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
@@ -56,20 +53,13 @@ Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Routes Utilisateur connecté
+| Espace utilisateur connecte
 |--------------------------------------------------------------------------
 */
-//Login and registration routes
-
-    
-
 Route::middleware('auth')->group(function () {
     Route::resource('documents', DocumentController::class);
     Route::get('/documents/{id}/view', [DocumentController::class, 'view'])->name('documents.view');
     Route::get('/documents/{id}/download', [DocumentController::class, 'download'])->name('documents.download');
-
-    Route::resource('parcours', ParcoursController::class);
-    Route::resource('annees', AnneeController::class);
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -78,12 +68,10 @@ Route::middleware('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Routes Admin
+| Espace admin
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
-
-    // Dashboard admin
     Route::get('/', function () {
         return view('admin.dashboard', [
             'documentsCount' => Document::count(),
@@ -94,31 +82,24 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
         ]);
     })->name('dashboard');
 
+    Route::resource('parcours', ParcoursAdminController::class)->except('show');
+    Route::resource('niveaux', NiveauAdminController::class)->except('show');
+    Route::get('/users', [UserAdminController::class, 'index'])->name('users.index');
 
-
-    // Parcours & Niveaux
-    // Route::resource('parcours', ParcoursAdminController::class);
-    // Route::resource('niveaux', NiveauAdminController::class);
-});
-// Gestion des messages
-
-
-
-    Route::get('/admin/messages', function () {
+    Route::get('/messages', function () {
         $messages = Message::latest()->paginate(10);
         return view('admin.messages.index', compact('messages'));
-    })->middleware(['auth', 'is_admin'])->name('admin.messages.index');
+    })->name('messages.index');
 
-    Route::delete('/admin/messages/{message}', function (Message $message) {
+    Route::delete('/messages/{message}', function (Message $message) {
         $message->delete();
-        return redirect()->route('admin.messages.index')->with('success', 'Message supprimé avec succès.');
-    })->middleware(['auth', 'is_admin'])->name('admin.messages.destroy');
-
-
+        return redirect()->route('admin.messages.index')->with('success', 'Message supprime avec succes.');
+    })->name('messages.destroy');
+});
 
 /*
 |--------------------------------------------------------------------------
 | Auth Routes
 |--------------------------------------------------------------------------
 */
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

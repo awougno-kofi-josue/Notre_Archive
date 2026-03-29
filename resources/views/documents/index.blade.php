@@ -1,86 +1,239 @@
 <x-app-layout>
     <x-slot name="header">
         @section('title', ' - Liste des documents')
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight mb-4">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             Liste des documents
         </h2>
+    </x-slot>
 
-        <div>
-            <a href="{{ route('documents.create') }}" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Ajouter un document</a>
+    @once
+    <style>
+        :root { --navy:#0d1b2a; --gold:#c9a84c; --cream:#f7f3ed; --slate:#4a5568; }
 
+        .af-hero-bar {
+            background-color: var(--navy);
+            border-bottom: 3px solid var(--gold);
+            position: relative; overflow: hidden;
+            padding: 2.5rem 0;
+        }
+        .af-hero-bar::before {
+            content:''; position:absolute; inset:0;
+            background-image: repeating-linear-gradient(45deg,rgba(201,168,76,.05) 0,rgba(201,168,76,.05) 1px,transparent 0,transparent 50%);
+            background-size:28px 28px; pointer-events:none;
+        }
+        .af-label {
+            font-size:.72rem; font-weight:600; letter-spacing:.15em;
+            text-transform:uppercase; color:var(--gold);
+        }
+
+        /* filter bar */
+        .af-filter-bar { background:#fff; border-bottom:1px solid #e8e2da; padding:1rem 0; }
+        .af-select {
+            font-family:'DM Sans',sans-serif;
+            background-color:#fff;
+            border:1px solid #d9d2c8;
+            border-radius:3px;
+            padding:.5rem .9rem;
+            font-size:.875rem;
+            color:var(--navy);
+            outline:none;
+            transition:border-color .2s;
+        }
+        .af-select:focus { border-color:var(--gold); }
+        .af-btn-filter {
+            background-color:var(--navy);
+            color:#fff;
+            border:none;
+            border-radius:3px;
+            padding:.5rem 1.2rem;
+            font-size:.8rem;
+            font-weight:600;
+            letter-spacing:.06em;
+            text-transform:uppercase;
+            cursor:pointer;
+            transition:background .2s;
+        }
+        .af-btn-filter:hover { background-color:#1b3a6b; }
+        .af-btn-add {
+            background-color:var(--gold);
+            color:var(--navy);
+            border:none;
+            border-radius:3px;
+            padding:.5rem 1.2rem;
+            font-size:.8rem;
+            font-weight:700;
+            letter-spacing:.06em;
+            text-transform:uppercase;
+            text-decoration:none;
+            display:inline-flex;
+            align-items:center;
+            gap:.4rem;
+            transition:background .2s;
+        }
+        .af-btn-add:hover { background-color:#b8973f; color:var(--navy); }
+
+        /* doc card */
+        .doc-card {
+            background:#fff;
+            border:1px solid #e8e2da;
+            border-radius:4px;
+            padding:1.75rem;
+            display:flex;
+            flex-direction:column;
+            height:100%;
+            transition:box-shadow .25s, border-color .25s, transform .25s;
+        }
+        .doc-card:hover {
+            box-shadow:0 8px 28px rgba(13,27,42,.09);
+            border-color:var(--gold);
+            transform:translateY(-3px);
+        }
+        .doc-card-icon {
+            width:40px; height:40px;
+            background-color:var(--navy);
+            border-radius:3px;
+            display:inline-flex; align-items:center; justify-content:center;
+            font-size:1.1rem; color:var(--gold);
+            margin-bottom:1rem; flex-shrink:0;
+        }
+        .doc-title {
+            font-family:'Playfair Display',serif;
+            font-size:1.05rem; font-weight:700;
+            color:var(--navy); margin-bottom:.6rem;
+        }
+        .doc-meta {
+            font-size:.8rem; color:var(--slate);
+            display:flex; align-items:center; gap:.35rem;
+            margin-bottom:.3rem;
+        }
+        .doc-desc {
+            font-size:.85rem; color:var(--slate);
+            line-height:1.6; flex-grow:1;
+            margin-top:.5rem;
+            display:-webkit-box; -webkit-line-clamp:3;
+            -webkit-box-orient:vertical; overflow:hidden;
+        }
+        .doc-actions { margin-top:1.25rem; display:flex; gap:.6rem; }
+        .doc-btn {
+            flex:1; display:inline-flex; align-items:center; justify-content:center;
+            gap:.4rem; padding:.55rem .5rem;
+            border-radius:3px; font-size:.78rem; font-weight:600;
+            letter-spacing:.05em; text-transform:uppercase;
+            text-decoration:none; transition:background .2s;
+        }
+        .doc-btn-open  { background:var(--navy); color:#fff; }
+        .doc-btn-open:hover { background:#1b3a6b; color:#fff; }
+        .doc-btn-dl    { background:var(--gold); color:var(--navy); }
+        .doc-btn-dl:hover { background:#b8973f; color:var(--navy); }
+
+        .af-empty {
+            text-align:center; padding:4rem 1rem;
+            color:var(--slate); font-size:.95rem;
+        }
+        .af-empty i { font-size:3rem; color:#d9d2c8; display:block; margin-bottom:1rem; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    @endonce
+
+    {{-- ── HERO BAR ── --}}
+    <div class="af-hero-bar">
+        <div class="container position-relative d-flex align-items-center justify-content-between flex-wrap gap-3"
+             style="font-family:'DM Sans',sans-serif;">
+            <div>
+                <div class="af-label mb-1">Bibliothèque</div>
+                <h1 style="font-family:'Playfair Display',serif; font-size:clamp(1.6rem,3vw,2.2rem);
+                            font-weight:900; color:#fff; margin:0; line-height:1.1;">
+                    Liste des <span style="color:var(--gold);">documents</span>
+                </h1>
+            </div>
+            <a href="{{ route('documents.create') }}" class="af-btn-add">
+                <i class="bi bi-plus-lg"></i> Ajouter un document
+            </a>
         </div>
-            </x-slot>
-
-    <!-- Formulaire de filtre -->
-    <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 py-6">
-        <form method="GET" action="{{ route('documents.index') }}" class="flex flex-wrap gap-4 items-center">
-            <!-- Parcours -->
-            <select name="parcours_id" class="border rounded px-3 py-2">
-                <option value="">Tous les parcours</option>
-                @foreach($parcoursList as $parcours)
-                    <option value="{{ $parcours->id }}" {{ request('parcours_id') == $parcours->id ? 'selected' : '' }}>
-                        {{ $parcours->nom }}
-                    </option>
-                @endforeach
-            </select>
-
-            <!-- Année -->
-            <select name="annee_id" class="border rounded px-3 py-2">
-                <option value="">Toutes les années</option>
-                @foreach($anneesList as $annee)
-                    <option value="{{ $annee->id }}" {{ request('annee_id') == $annee->id ? 'selected' : '' }}>
-                        {{ $annee->nom }} ({{ $annee->parcours->nom ?? '' }})
-                    </option>
-                @endforeach
-            </select>
-
-            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                Filtrer
-            </button>
-        </form>
     </div>
 
-    <!-- Cartes des documents -->
-    <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @forelse($documents as $doc)
-                <div class="bg-white shadow-md rounded-lg p-6 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-lg font-bold mb-2">{{ $doc->titre }}</h3>
-                        <p class="text-gray-600 mb-1"><strong>Parcours :</strong> {{ $doc->parcours ? $doc->parcours->nom : 'N/A' }}</p>
-                        <p class="text-gray-600 mb-1"><strong>Année :</strong> {{ $doc->niveau ? $doc->niveau->nom : 'N/A' }}</p>
-                        <p class="text-gray-700 mb-2"><strong>Description :</strong> {{ $doc->description }}</p>
-                    </div>
+    {{-- ── FILTER BAR ── --}}
+    <div class="af-filter-bar">
+        <div class="container">
+            <form method="GET" action="{{ route('documents.index') }}"
+                  style="display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; font-family:'DM Sans',sans-serif;">
+                <select name="parcours_id" class="af-select">
+                    <option value="">Tous les parcours</option>
+                    @foreach($parcoursList as $parcours)
+                        <option value="{{ $parcours->id }}" {{ request('parcours_id') == $parcours->id ? 'selected' : '' }}>
+                            {{ $parcours->nom }}
+                        </option>
+                    @endforeach
+                </select>
 
-                    <!-- Boutons Ouvrir et Télécharger -->
-                    <div class="mt-4 flex gap-2">
-                        <a href="{{ route('documents.view', $doc->id) }}" target="_blank"
-                           class="flex items-center justify-center bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Ouvrir
-                        </a>
+                <select name="annee_id" class="af-select">
+                    <option value="">Toutes les années</option>
+                    @foreach($anneesList as $annee)
+                        <option value="{{ $annee->id }}" {{ request('annee_id') == $annee->id ? 'selected' : '' }}>
+                            {{ $annee->nom }} ({{ $annee->parcours->nom ?? '' }})
+                        </option>
+                    @endforeach
+                </select>
 
-                        <a href="{{ route('documents.download', $doc->id) }}"
-                           class="flex items-center justify-center bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v8m0 0l-4-4m4 4l4-4m0-8V4m0 0l-4 4m4-4l4 4"/>
-                            </svg>
-                            Télécharger
-                        </a>
+                <button type="submit" class="af-btn-filter">
+                    <i class="bi bi-funnel me-1"></i> Filtrer
+                </button>
+
+                @if(request('parcours_id') || request('annee_id'))
+                <a href="{{ route('documents.index') }}"
+                   style="font-size:.78rem; color:var(--slate); text-decoration:none; letter-spacing:.04em;">
+                    <i class="bi bi-x-circle me-1"></i>Réinitialiser
+                </a>
+                @endif
+            </form>
+        </div>
+    </div>
+
+    {{-- ── DOC GRID ── --}}
+    <div style="background-color:var(--cream); padding:3rem 0; font-family:'DM Sans',sans-serif;">
+        <div class="container">
+            <div class="row g-4">
+                @forelse($documents as $doc)
+                <div class="col-md-6 col-lg-4">
+                    <div class="doc-card">
+                        <div class="doc-card-icon">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <div class="doc-title">{{ $doc->titre }}</div>
+                        <div class="doc-meta">
+                            <i class="bi bi-diagram-3" style="color:var(--gold);"></i>
+                            {{ $doc->parcours?->nom ?? 'N/A' }}
+                        </div>
+                        <div class="doc-meta">
+                            <i class="bi bi-calendar3" style="color:var(--gold);"></i>
+                            {{ $doc->niveau?->nom ?? 'N/A' }}
+                        </div>
+                        <p class="doc-desc">{{ $doc->description }}</p>
+                        <div class="doc-actions">
+                            <a href="{{ route('documents.view', $doc->id) }}" target="_blank" class="doc-btn doc-btn-open">
+                                <i class="bi bi-eye"></i> Ouvrir
+                            </a>
+                            <a href="{{ route('documents.download', $doc->id) }}" class="doc-btn doc-btn-dl">
+                                <i class="bi bi-download"></i> Télécharger
+                            </a>
+                        </div>
                     </div>
                 </div>
-            @empty
-                <p class="col-span-3 text-center text-gray-500">Aucun document trouvé.</p>
-            @endforelse
-        </div>
+                @empty
+                <div class="col-12">
+                    <div class="af-empty">
+                        <i class="bi bi-folder2-open"></i>
+                        Aucun document trouvé pour ces critères.
+                    </div>
+                </div>
+                @endforelse
+            </div>
 
-        <!-- Pagination -->
-        <div class="mt-6 flex justify-center">
-            {{ $documents->links() }}
+            {{-- Pagination --}}
+            <div class="mt-5 d-flex justify-content-center">
+                {{ $documents->links() }}
+            </div>
         </div>
     </div>
 </x-app-layout>
