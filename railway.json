@@ -7,37 +7,3 @@
     "restartPolicyMaxRetries": 10
   }
 }
-```
-
-`heroku-php-apache2` → `frankenphp run --config /Caddyfile` qui correspond à ce que Railway a réellement installé.
-
----
-
-## Correction 2 — Variables DB dans Railway
-
-Dans Railway → ton service **Notre_Archive** → onglet **Variables**, remplace tes variables DB actuelles par la syntaxe de référence :
-
-| Variable | Valeur |
-|---|---|
-| `DB_HOST` | `${{MySQL.MYSQLHOST}}` |
-| `DB_PORT` | `${{MySQL.MYSQLPORT}}` |
-| `DB_DATABASE` | `${{MySQL.MYSQLDATABASE}}` |
-| `DB_USERNAME` | `${{MySQL.MYSQLUSER}}` |
-| `DB_PASSWORD` | `${{MySQL.MYSQLPASSWORD}}` |
-
-Garde `DB_CONNECTION=mysql` tel quel.
-
-> Pour trouver le nom exact de ton service MySQL : clique dessus dans Railway, regarde le titre en haut. Si c'est `MySQL` (avec majuscule), la syntaxe ci-dessus est correcte. Si c'est `mysql` en minuscule, adapte : `${{mysql.MYSQLHOST}}`.
-
----
-
-## Correction 3 — APP_URL
-
-Dans tes variables actuelles tu as :
-```
-APP_URL="http://127.0.0.1:8000"
-```
-
-Change-la par ton vrai domaine Railway :
-```
-APP_URL=https://notrearchive-production.up.railway.app
