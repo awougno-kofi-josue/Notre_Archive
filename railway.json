@@ -1,7 +1,7 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "deploy": {
-    "startCommand": "php artisan migrate --force && frankenphp run --config /Caddyfile",
+    "startCommand": "php artisan config:clear && php artisan migrate --force && php artisan config:cache && frankenphp run --config /Caddyfile",
     "healthcheckPath": "/up",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
