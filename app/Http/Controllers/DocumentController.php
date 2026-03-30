@@ -7,21 +7,65 @@ use App\Models\Niveau;
 use App\Models\Parcours;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Validation\ValidationException;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class DocumentController extends Controller
 {
-    // On peut augmenter la limite car Cloudinary gère très bien les gros fichiers
     private const MAX_UPLOAD_KB = 10240; // 10 Mo
+
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    private function ensureCloudinaryConfigured(): void
+    {
+        $disk = config('filesystems.disks.cloudinary');
+
+        if (! is_array($disk)) {
+            throw ValidationException::withMessages([
+                'fichier' => "Cloudinary n'est pas configuré sur ce serveur.",
+            ]);
+        }
+
+        $hasUrl         = ! empty($disk['url']);
+        $hasCredentials = ! empty($disk['cloud']) && ! empty($disk['key']) && ! empty($disk['secret']);
+
+        if (! $hasUrl && ! $hasCredentials) {
+            throw ValidationException::withMessages([
+                'fichier' => 'Configuration Cloudinary incomplète. Ajoutez CLOUDINARY_URL ou CLOUDINARY_CLOUD_NAME / CLOUDINARY_KEY / CLOUDINARY_SECRET.',
+            ]);
+        }
+    }
+
+    private function cloudinaryUpload(UploadedFile $file): string
+    {
+        $tmpPath = sys_get_temp_dir() . '/' . uniqid('pdf_', true) . '.pdf';
+        copy($file->getRealPath(), $tmpPath);
+
+        try {
+            $result = Cloudinary::uploadApi()->upload(
+                $tmpPath,
+                [
+                    'folder'        => 'notre_archive',
+                    'resource_type' => 'raw',
+                    'access_mode'   => 'public',
+                ]
+            );
+        } finally {
+            @unlink($tmpPath);
+        }
+
+        return $result['secure_url'];
+    }
+
+    // ─── Front ───────────────────────────────────────────────────────────────
 
     public function index(Request $request)
     {
-        $parcoursList = Parcours::all();
-        $anneesList = Niveau::with('parcours')->get();
-        $usersList = collect();
+        $parcoursList    = Parcours::all();
+        $anneesList      = Niveau::with('parcours')->get();
+        $usersList       = collect();
         $canFilterByUser = (bool) ($request->user()?->is_admin || $request->user()?->can_manage_documents);
 
         if ($canFilterByUser) {
@@ -30,97 +74,97 @@ class DocumentController extends Controller
 
         $query = Document::with(['parcours', 'niveau', 'user']);
 
-        // Filtres
-        if ($request->filled('parcours_id')) {
-            $query->where('parcours_id', $request->parcours_id);
-        }
-        if ($request->filled('annee_id')) {
-            $query->where('niveau_id', $request->annee_id);
-        }
-        if ($canFilterByUser && $request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
-        }
+        if ($request->filled('parcours_id'))                 $query->where('parcours_id', $request->parcours_id);
+        if ($request->filled('annee_id'))                    $query->where('niveau_id',   $request->annee_id);
+        if ($canFilterByUser && $request->filled('user_id')) $query->where('user_id',     $request->user_id);
 
         $documents = $query->latest()->paginate(9)->withQueryString();
 
-        return view('documents.index', compact('documents', 'parcoursList', 'anneesList', 'usersList', 'canFilterByUser'));
+        return view('documents.index', compact(
+            'documents', 'parcoursList', 'anneesList', 'usersList', 'canFilterByUser'
+        ));
     }
 
     public function create()
     {
         $parcours = Parcours::all();
-        $annees = Niveau::with('parcours')->get();
+        $annees   = Niveau::with('parcours')->get();
+
         return view('documents.create', compact('parcours', 'annees'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'titre' => 'required|string|max:255',
+            'titre'       => 'required|string|max:255',
             'description' => 'required|string',
-            'fichier' => 'required|file|mimes:pdf,doc,docx,png,jpg,jpeg,webp|max:'.self::MAX_UPLOAD_KB,
+            'fichier'     => 'required|file|mimes:pdf|max:'.self::MAX_UPLOAD_KB,
             'parcours_id' => 'required|exists:parcours,id',
-            'niveau_id' => [
+            'niveau_id'   => [
                 'required',
-                Rule::exists('niveaux', 'id')->where(function ($query) use ($request) {
-                    $query->where('parcours_id', $request->input('parcours_id'));
-                }),
+                Rule::exists('niveaux', 'id')->where(
+                    fn ($q) => $q->where('parcours_id', $request->input('parcours_id'))
+                ),
             ],
         ], [
-            'niveau_id.exists' => 'L\'année sélectionnée ne correspond pas au parcours choisi.',
+            'fichier.mimes'    => 'Seuls les fichiers PDF sont acceptés.',
+            'niveau_id.exists' => "L'année sélectionnée ne correspond pas au parcours choisi.",
         ]);
 
-        // Upload vers Cloudinary dans le dossier 'notre_archive'
-       $file = $request->file('fichier');
-            $result = Cloudinary::upload($file->getRealPath(), [
-                'folder' => 'notre_archive'
-            ]);
-            $path = $result->getSecurePath();
-            
+        $this->ensureCloudinaryConfigured();
+
         Document::create([
-            'titre' => $validated['titre'],
+            'titre'       => $validated['titre'],
             'description' => $validated['description'],
-            'fichier' => $path, // On stocke l'URL directe
-            'niveau_id' => $validated['niveau_id'],
+            'fichier'     => $this->cloudinaryUpload($request->file('fichier')),
+            'niveau_id'   => $validated['niveau_id'],
             'parcours_id' => $validated['parcours_id'],
-            'user_id' => $request->user()?->id,
+            'user_id'     => $request->user()?->id,
         ]);
 
-        return redirect()->route('documents.index')->with('success', 'Document créé et sauvegardé sur Cloudinary.');
+        return redirect()->route('documents.index')
+            ->with('success', 'Document PDF créé et sauvegardé sur Cloudinary.');
     }
 
     public function destroy(Document $document)
     {
-        $this->authorize('delete', $document);
-
-        // Note: Pour supprimer sur Cloudinary, il faudrait stocker le public_id.
-        // Ici, on supprime au moins l'entrée en base de données.
         $document->delete();
 
-        return redirect()->route('documents.index')->with('success', 'Document supprimé avec succès.');
+        return redirect()->route('documents.index')
+            ->with('success', 'Document supprimé avec succès.');
     }
 
-    // Visionnage et Téléchargement : On redirige simplement vers l'URL Cloudinary
+    /**
+     * Ouvre le PDF directement depuis l'URL Cloudinary stockée en base.
+     */
     public function view(string $id)
     {
-        $document = Document::findOrFail($id);
-        return redirect()->away($document->fichier);
+        $url = Document::findOrFail($id)->fichier;
+        abort_if(! $url, 404, 'Fichier introuvable.');
+        return redirect()->away($url);
     }
 
+    /**
+     * Télécharge le PDF via l'URL Cloudinary avec fl_attachment.
+     */
     public function download(string $id)
     {
-        $document = Document::findOrFail($id);
-        // On redirige vers l'URL, le navigateur gérera selon le type de fichier
-        return redirect()->away($document->fichier);
+        $url = Document::findOrFail($id)->fichier;
+        abort_if(! $url, 404, 'Fichier introuvable.');
+
+        // fl_attachment force le téléchargement au lieu de l'affichage
+        $downloadUrl = str_replace('/upload/', '/upload/fl_attachment/', $url);
+        return redirect()->away($downloadUrl);
     }
 
-    // --- SECTION API ---
+    // ─── API ─────────────────────────────────────────────────────────────────
 
     public function apiIndex(Request $request)
     {
         $query = Document::with(['parcours', 'niveau']);
+
         if ($request->filled('parcours_id')) $query->where('parcours_id', $request->parcours_id);
-        if ($request->filled('niveau_id')) $query->where('niveau_id', $request->niveau_id);
+        if ($request->filled('niveau_id'))   $query->where('niveau_id',   $request->niveau_id);
 
         return response()->json($query->paginate(9));
     }
@@ -128,22 +172,24 @@ class DocumentController extends Controller
     public function apiStore(Request $request)
     {
         $validated = $request->validate([
-            'titre' => 'required|string|max:255',
+            'titre'       => 'required|string|max:255',
             'description' => 'required|string',
-            'fichier' => 'required|file|mimes:pdf,doc,docx,png,jpg,jpeg,webp|max:'.self::MAX_UPLOAD_KB,
+            'fichier'     => 'required|file|mimes:pdf|max:'.self::MAX_UPLOAD_KB,
             'parcours_id' => 'required|exists:parcours,id',
-            'niveau_id' => 'required|exists:niveaux,id',
+            'niveau_id'   => 'required|exists:niveaux,id',
+        ], [
+            'fichier.mimes' => 'Seuls les fichiers PDF sont acceptés.',
         ]);
 
-        $result = $request->file('fichier')->storeOnCloudinary('notre_archive');
-        
+        $this->ensureCloudinaryConfigured();
+
         $document = Document::create([
-            'titre' => $validated['titre'],
+            'titre'       => $validated['titre'],
             'description' => $validated['description'],
-            'fichier' => $result->getSecurePath(),
-            'niveau_id' => $validated['niveau_id'],
+            'fichier'     => $this->cloudinaryUpload($request->file('fichier')),
+            'niveau_id'   => $validated['niveau_id'],
             'parcours_id' => $validated['parcours_id'],
-            'user_id' => $request->user()?->id,
+            'user_id'     => $request->user()?->id,
         ]);
 
         return response()->json(['message' => 'Document créé avec succès', 'data' => $document], 201);
@@ -153,17 +199,19 @@ class DocumentController extends Controller
     {
         $document = Document::findOrFail($id);
 
-        $validated = $request->validate([
-            'titre' => 'sometimes|string|max:255',
+        $request->validate([
+            'titre'       => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
-            'fichier' => 'nullable|file|mimes:pdf,doc,docx,png,jpg,jpeg,webp|max:'.self::MAX_UPLOAD_KB,
-            'niveau_id' => 'sometimes|exists:niveaux,id',
+            'fichier'     => 'nullable|file|mimes:pdf|max:'.self::MAX_UPLOAD_KB,
+            'niveau_id'   => 'sometimes|exists:niveaux,id',
             'parcours_id' => 'sometimes|exists:parcours,id',
+        ], [
+            'fichier.mimes' => 'Seuls les fichiers PDF sont acceptés.',
         ]);
 
         if ($request->hasFile('fichier')) {
-            $result = $request->file('fichier')->storeOnCloudinary('notre_archive');
-            $document->fichier = $result->getSecurePath();
+            $this->ensureCloudinaryConfigured();
+            $document->fichier = $this->cloudinaryUpload($request->file('fichier'));
         }
 
         $document->update($request->except('fichier'));
@@ -173,8 +221,8 @@ class DocumentController extends Controller
 
     public function apiDestroy(string $id)
     {
-        $document = Document::findOrFail($id);
-        $document->delete();
+        Document::findOrFail($id)->delete();
+
         return response()->json(['message' => 'Document supprimé']);
     }
 }
