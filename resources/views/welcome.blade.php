@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Notre Archive</title>
+    <link rel="icon" href="{{ asset('logo.png') }}" type="image/png">
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -47,14 +48,12 @@
         .navbar-toggler-icon {
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255,255,255,0.9%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
         }
-        .navbar-brand-text {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: #fff !important;
-            letter-spacing: .02em;
+        .navbar-brand-logo {
+            height: 44px;
+            width: auto;
+            display: block;
+            object-fit: contain;
         }
-        .navbar-brand-text span { color: var(--gold); }
         .nav-link-custom {
             color: #ffffff !important;
             font-size: .875rem;
@@ -309,7 +308,7 @@
         }
 
         @media (max-width: 767.98px) {
-            .navbar-brand-text { font-size: 1.05rem; }
+            .navbar-brand-logo { height: 36px; }
             .hero { padding: 3rem 0 2.4rem; }
             .hero-title { font-size: clamp(1.8rem, 8vw, 2.4rem); }
             .hero-subtitle { font-size: .95rem; margin-bottom: 1.5rem; }
@@ -331,8 +330,8 @@
 {{-- ── NAVBAR ── --}}
 <nav class="navbar navbar-expand-lg navbar-custom">
     <div class="container">
-        <a class="navbar-brand navbar-brand-text" href="#">
-            <i class="bi bi-archive me-2" style="color: var(--gold);"></i>Notre <span>Archive</span>
+        <a class="navbar-brand" href="{{ route('home') }}">
+            <img src="{{ asset('logo.png') }}" alt="Logo Notre Archive" class="navbar-brand-logo">
         </a>
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>

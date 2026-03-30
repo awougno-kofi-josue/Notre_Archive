@@ -10,7 +10,7 @@
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link rel="dns-prefetch" href="https://fonts.bunny.net">
-        <link rel="shortcut icon" href="https://example.com/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="{{ asset('logo.png') }}" type="image/png">
 
         {{-- Bootstrap CSS --}}
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
