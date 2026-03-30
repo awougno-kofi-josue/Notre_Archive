@@ -90,10 +90,29 @@
             color:var(--slate);
             margin-top:.5rem;
         }
+        .af-help a {
+            color:#1b3a6b;
+            font-weight:700;
+            text-decoration:underline;
+        }
         .af-error {
             font-size:.8rem;
             color:#b42318;
             margin-top:.4rem;
+        }
+        .af-size-error {
+            display:none;
+            margin-top:.5rem;
+            border:1px solid #f3a8a8;
+            background:#fff1f1;
+            color:#8a1c1c;
+            border-radius:3px;
+            padding:.7rem .8rem;
+            font-size:.82rem;
+            font-weight:700;
+        }
+        .af-size-error.is-visible {
+            display:block;
         }
         .af-errors-box {
             border:1px solid #f5c2c7;
@@ -183,7 +202,7 @@
                             </div>
                         @endif
 
-                        <form action="{{ url('/documents') }}" method="POST" enctype="multipart/form-data">
+                        <form id="document-upload-form" action="{{ url('/documents') }}" method="POST" enctype="multipart/form-data">
                             @csrf
 
                             <div class="af-row">
@@ -233,7 +252,8 @@
 
                                 <div class="af-field">
                                     <label for="fichier">Fichier</label>
-                                    <input type="file" class="af-file" id="fichier" name="fichier" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp" required>
+                                    <input type="file" class="af-file" id="fichier" name="fichier" accept=".pdf" required>
+                                    <div id="fichier-size-error" class="af-size-error" role="alert" aria-live="assertive"></div>
                                     @error('fichier')
                                         <div class="af-error">{{ $message }}</div>
                                     @enderror
@@ -249,7 +269,10 @@
                             </div>
 
                             <p class="af-help">
-                                Taille maximale: 5 Mo. Si le fichier depasse 500 Ko, une compression lossless est tentee automatiquement.
+                                Taille maximale: 5 Mo. Si le fichier depasse 5 Mo, compressez-le ici:
+                                <a href="https://www.ilovepdf.com/fr/compresser_pdf" target="_blank" rel="noopener noreferrer">
+                                    https://www.ilovepdf.com/fr/compresser_pdf
+                                </a>
                             </p>
 
                             <div class="af-actions">
@@ -271,59 +294,108 @@
         (function () {
             const parcoursSelect = document.getElementById('parcours');
             const niveauSelect = document.getElementById('niveau');
+            const form = document.getElementById('document-upload-form');
+            const fileInput = document.getElementById('fichier');
+            const fileSizeError = document.getElementById('fichier-size-error');
+            const maxFileSizeBytes = 5 * 1024 * 1024;
 
-            if (!parcoursSelect || !niveauSelect) {
-                return;
-            }
+            if (parcoursSelect && niveauSelect) {
+                const defaultPlaceholder = 'Selectionner une annee';
+                const emptyPlaceholder = 'Aucune annee pour ce parcours';
+                const originalOptions = Array.from(niveauSelect.querySelectorAll('option[data-parcours-id]'))
+                    .map((option) => option.cloneNode(true));
+                const oldNiveau = niveauSelect.dataset.selected || '';
 
-            const defaultPlaceholder = 'Selectionner une annee';
-            const emptyPlaceholder = 'Aucune annee pour ce parcours';
-            const originalOptions = Array.from(niveauSelect.querySelectorAll('option[data-parcours-id]'))
-                .map((option) => option.cloneNode(true));
-            const oldNiveau = niveauSelect.dataset.selected || '';
+                function renderNiveaux(useOldValue) {
+                    const selectedParcours = parcoursSelect.value;
+                    const previousValue = useOldValue ? oldNiveau : '';
 
-            function renderNiveaux(useOldValue) {
-                const selectedParcours = parcoursSelect.value;
-                const previousValue = useOldValue ? oldNiveau : '';
+                    niveauSelect.innerHTML = '';
 
-                niveauSelect.innerHTML = '';
+                    const placeholder = document.createElement('option');
+                    placeholder.value = '';
+                    placeholder.textContent = defaultPlaceholder;
+                    niveauSelect.appendChild(placeholder);
 
-                const placeholder = document.createElement('option');
-                placeholder.value = '';
-                placeholder.textContent = defaultPlaceholder;
-                niveauSelect.appendChild(placeholder);
+                    if (!selectedParcours) {
+                        niveauSelect.disabled = true;
+                        return;
+                    }
 
-                if (!selectedParcours) {
-                    niveauSelect.disabled = true;
-                    return;
+                    const matchedOptions = originalOptions.filter(
+                        (option) => option.dataset.parcoursId === selectedParcours
+                    );
+
+                    if (!matchedOptions.length) {
+                        placeholder.textContent = emptyPlaceholder;
+                        niveauSelect.disabled = true;
+                        return;
+                    }
+
+                    matchedOptions.forEach((option) => {
+                        niveauSelect.appendChild(option.cloneNode(true));
+                    });
+
+                    niveauSelect.disabled = false;
+
+                    if (previousValue && matchedOptions.some((option) => option.value === previousValue)) {
+                        niveauSelect.value = previousValue;
+                    }
                 }
 
-                const matchedOptions = originalOptions.filter(
-                    (option) => option.dataset.parcoursId === selectedParcours
-                );
-
-                if (!matchedOptions.length) {
-                    placeholder.textContent = emptyPlaceholder;
-                    niveauSelect.disabled = true;
-                    return;
-                }
-
-                matchedOptions.forEach((option) => {
-                    niveauSelect.appendChild(option.cloneNode(true));
+                parcoursSelect.addEventListener('change', function () {
+                    renderNiveaux(false);
                 });
 
-                niveauSelect.disabled = false;
-
-                if (previousValue && matchedOptions.some((option) => option.value === previousValue)) {
-                    niveauSelect.value = previousValue;
-                }
+                renderNiveaux(true);
             }
 
-            parcoursSelect.addEventListener('change', function () {
-                renderNiveaux(false);
-            });
+            function hideFileSizeError() {
+                if (!fileSizeError) {
+                    return;
+                }
 
-            renderNiveaux(true);
+                fileSizeError.textContent = '';
+                fileSizeError.classList.remove('is-visible');
+            }
+
+            function showFileSizeError() {
+                if (!fileSizeError) {
+                    return;
+                }
+
+                fileSizeError.textContent = 'Erreur: le fichier depasse 5 Mo. Compressez-le puis reessayez.';
+                fileSizeError.classList.add('is-visible');
+            }
+
+            function isFileSizeValid() {
+                if (!fileInput || !fileInput.files || !fileInput.files.length) {
+                    hideFileSizeError();
+                    return true;
+                }
+
+                const file = fileInput.files[0];
+                if (file.size > maxFileSizeBytes) {
+                    showFileSizeError();
+                    return false;
+                }
+
+                hideFileSizeError();
+                return true;
+            }
+
+            if (fileInput) {
+                fileInput.addEventListener('change', isFileSizeValid);
+            }
+
+            if (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!isFileSizeValid()) {
+                        event.preventDefault();
+                        fileInput.focus();
+                    }
+                });
+            }
         })();
     </script>
 </x-app-layout>

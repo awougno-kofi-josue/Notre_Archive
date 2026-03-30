@@ -14,7 +14,7 @@ use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class DocumentController extends Controller
 {
-    private const MAX_UPLOAD_KB = 10240; // 10 Mo
+    private const MAX_UPLOAD_KB = 5120; // 5 Mo
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
@@ -108,6 +108,7 @@ class DocumentController extends Controller
             ],
         ], [
             'fichier.mimes'    => 'Seuls les fichiers PDF sont acceptés.',
+            'fichier.max'      => 'Le fichier dépasse 5 Mo. Compressez-le puis réessayez.',
             'niveau_id.exists' => "L'année sélectionnée ne correspond pas au parcours choisi.",
         ]);
 
@@ -179,6 +180,7 @@ class DocumentController extends Controller
             'niveau_id'   => 'required|exists:niveaux,id',
         ], [
             'fichier.mimes' => 'Seuls les fichiers PDF sont acceptés.',
+            'fichier.max'   => 'Le fichier dépasse 5 Mo. Compressez-le puis réessayez.',
         ]);
 
         $this->ensureCloudinaryConfigured();
@@ -207,6 +209,7 @@ class DocumentController extends Controller
             'parcours_id' => 'sometimes|exists:parcours,id',
         ], [
             'fichier.mimes' => 'Seuls les fichiers PDF sont acceptés.',
+            'fichier.max'   => 'Le fichier dépasse 5 Mo. Compressez-le puis réessayez.',
         ]);
 
         if ($request->hasFile('fichier')) {
