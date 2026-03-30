@@ -13,11 +13,10 @@ class DocumentPolicy
             return true;
         }
 
-        if ($user->can_manage_documents) {
-            return true;
+        if ($user->can_manage_documents && $user->parcours_id !== null) {
+            return (int) $document->parcours_id === (int) $user->parcours_id;
         }
 
         return $document->user_id !== null && $document->user_id === $user->id;
     }
 }
-

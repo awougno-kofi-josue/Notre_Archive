@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\IsAdmin;
+use App\Http\Middleware\IsModerator;
 use App\Http\Middleware\UpdateLastSeen;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth' => Authenticate::class,
             'verified' => EnsureEmailIsVerified::class,
             'is_admin' => IsAdmin::class,
+            'is_moderator' => IsModerator::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

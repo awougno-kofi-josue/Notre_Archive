@@ -6,17 +6,15 @@ use App\Models\Document;
 use App\Models\Niveau;
 use App\Models\Parcours;
 use App\Models\User;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class DocumentController extends Controller
 {
     private const MAX_UPLOAD_KB = 5120; // 5 Mo
-
-    // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private function ensureCloudinaryConfigured(): void
     {
@@ -24,32 +22,32 @@ class DocumentController extends Controller
 
         if (! is_array($disk)) {
             throw ValidationException::withMessages([
-                'fichier' => "Cloudinary n'est pas configuré sur ce serveur.",
+                'fichier' => "Cloudinary n'est pas configure sur ce serveur.",
             ]);
         }
 
-        $hasUrl         = ! empty($disk['url']);
+        $hasUrl = ! empty($disk['url']);
         $hasCredentials = ! empty($disk['cloud']) && ! empty($disk['key']) && ! empty($disk['secret']);
 
         if (! $hasUrl && ! $hasCredentials) {
             throw ValidationException::withMessages([
-                'fichier' => 'Configuration Cloudinary incomplète. Ajoutez CLOUDINARY_URL ou CLOUDINARY_CLOUD_NAME / CLOUDINARY_KEY / CLOUDINARY_SECRET.',
+                'fichier' => 'Configuration Cloudinary incomplete. Ajoutez CLOUDINARY_URL ou CLOUDINARY_CLOUD_NAME / CLOUDINARY_KEY / CLOUDINARY_SECRET.',
             ]);
         }
     }
 
     private function cloudinaryUpload(UploadedFile $file): string
     {
-        $tmpPath = sys_get_temp_dir() . '/' . uniqid('pdf_', true) . '.pdf';
+        $tmpPath = sys_get_temp_dir().'/'.uniqid('pdf_', true).'.pdf';
         copy($file->getRealPath(), $tmpPath);
 
         try {
             $result = Cloudinary::uploadApi()->upload(
                 $tmpPath,
                 [
-                    'folder'        => 'notre_archive',
+                    'folder' => 'notre_archive',
                     'resource_type' => 'raw',
-                    'access_mode'   => 'public',
+                    'access_mode' => 'public',
                 ]
             );
         } finally {
@@ -59,36 +57,107 @@ class DocumentController extends Controller
         return $result['secure_url'];
     }
 
-    // ─── Front ───────────────────────────────────────────────────────────────
+    private function scopedParcoursIdForUser(?User $user): ?int
+    {
+        if (! $user || $user->is_admin || $user->parcours_id === null) {
+            return null;
+        }
+
+        return (int) $user->parcours_id;
+    }
+
+    private function canFilterByUser(?User $user): bool
+    {
+        return (bool) (
+            $user?->is_admin
+            || ($user?->can_manage_documents && $user?->parcours_id !== null)
+        );
+    }
+
+    private function ensureParcoursAccess(Request $request, int $parcoursId): void
+    {
+        $user = $request->user();
+
+        if (! $user || $user->is_admin || $user->parcours_id === null) {
+            return;
+        }
+
+        if ((int) $user->parcours_id !== $parcoursId) {
+            throw ValidationException::withMessages([
+                'parcours_id' => 'Vous ne pouvez gerer que les documents de votre parcours.',
+            ]);
+        }
+    }
 
     public function index(Request $request)
     {
-        $parcoursList    = Parcours::all();
-        $anneesList      = Niveau::with('parcours')->get();
-        $usersList       = collect();
-        $canFilterByUser = (bool) ($request->user()?->is_admin || $request->user()?->can_manage_documents);
+        $user = $request->user();
+        $scopedParcoursId = $this->scopedParcoursIdForUser($user);
+        $canFilterByUser = $this->canFilterByUser($user);
 
+        $parcoursList = $scopedParcoursId
+            ? Parcours::query()->whereKey($scopedParcoursId)->get()
+            : Parcours::all();
+
+        $anneesList = Niveau::with('parcours')
+            ->when($scopedParcoursId, fn ($q) => $q->where('parcours_id', $scopedParcoursId))
+            ->get();
+
+        $usersList = collect();
         if ($canFilterByUser) {
-            $usersList = User::query()->select('id', 'name')->orderBy('name')->get();
+            $usersList = User::query()
+                ->select('id', 'name')
+                ->when($scopedParcoursId, fn ($q) => $q->where('parcours_id', $scopedParcoursId))
+                ->orderBy('name')
+                ->get();
         }
+
+        $lockedParcours = $scopedParcoursId ? $parcoursList->first() : null;
 
         $query = Document::with(['parcours', 'niveau', 'user']);
 
-        if ($request->filled('parcours_id'))                 $query->where('parcours_id', $request->parcours_id);
-        if ($request->filled('annee_id'))                    $query->where('niveau_id',   $request->annee_id);
-        if ($canFilterByUser && $request->filled('user_id')) $query->where('user_id',     $request->user_id);
+        if ($scopedParcoursId) {
+            $query->where('parcours_id', $scopedParcoursId);
+        }
+
+        if ($request->filled('parcours_id')) {
+            $requestedParcoursId = (int) $request->input('parcours_id');
+            if (! $scopedParcoursId || $scopedParcoursId === $requestedParcoursId) {
+                $query->where('parcours_id', $requestedParcoursId);
+            }
+        }
+
+        if ($request->filled('annee_id')) {
+            $query->where('niveau_id', $request->input('annee_id'));
+        }
+
+        if ($canFilterByUser && $request->filled('user_id')) {
+            $query->where('user_id', $request->input('user_id'));
+        }
 
         $documents = $query->latest()->paginate(9)->withQueryString();
 
         return view('documents.index', compact(
-            'documents', 'parcoursList', 'anneesList', 'usersList', 'canFilterByUser'
+            'documents',
+            'parcoursList',
+            'anneesList',
+            'usersList',
+            'canFilterByUser',
+            'lockedParcours'
         ));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $parcours = Parcours::all();
-        $annees   = Niveau::with('parcours')->get();
+        $scopedParcoursId = $this->scopedParcoursIdForUser($request->user());
+
+        $parcours = $scopedParcoursId
+            ? Parcours::query()->whereKey($scopedParcoursId)->get()
+            : Parcours::all();
+
+        $annees = Niveau::with('parcours')
+            ->when($scopedParcoursId, fn ($q) => $q->where('parcours_id', $scopedParcoursId))
+            ->get();
 
         return view('documents.create', compact('parcours', 'annees'));
     }
@@ -96,76 +165,84 @@ class DocumentController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'titre'       => 'required|string|max:255',
+            'titre' => 'required|string|max:255',
             'description' => 'required|string',
-            'fichier'     => 'required|file|mimes:pdf|max:'.self::MAX_UPLOAD_KB,
+            'fichier' => 'required|file|mimes:pdf|max:'.self::MAX_UPLOAD_KB,
             'parcours_id' => 'required|exists:parcours,id',
-            'niveau_id'   => [
+            'niveau_id' => [
                 'required',
                 Rule::exists('niveaux', 'id')->where(
                     fn ($q) => $q->where('parcours_id', $request->input('parcours_id'))
                 ),
             ],
         ], [
-            'fichier.mimes'    => 'Seuls les fichiers PDF sont acceptés.',
-            'fichier.max'      => 'Le fichier dépasse 5 Mo. Compressez-le puis réessayez.',
-            'niveau_id.exists' => "L'année sélectionnée ne correspond pas au parcours choisi.",
+            'fichier.mimes' => 'Seuls les fichiers PDF sont acceptes.',
+            'fichier.max' => 'Le fichier depasse 5 Mo. Compressez-le puis reessayez.',
+            'niveau_id.exists' => "L'annee selectionnee ne correspond pas au parcours choisi.",
         ]);
 
+        $this->ensureParcoursAccess($request, (int) $validated['parcours_id']);
         $this->ensureCloudinaryConfigured();
 
         Document::create([
-            'titre'       => $validated['titre'],
+            'titre' => $validated['titre'],
             'description' => $validated['description'],
-            'fichier'     => $this->cloudinaryUpload($request->file('fichier')),
-            'niveau_id'   => $validated['niveau_id'],
+            'fichier' => $this->cloudinaryUpload($request->file('fichier')),
+            'niveau_id' => $validated['niveau_id'],
             'parcours_id' => $validated['parcours_id'],
-            'user_id'     => $request->user()?->id,
+            'user_id' => $request->user()?->id,
         ]);
 
         return redirect()->route('documents.index')
-            ->with('success', 'Document PDF créé et sauvegardé sur Cloudinary.');
+            ->with('success', 'Document PDF cree et sauvegarde sur Cloudinary.');
     }
 
     public function destroy(Document $document)
     {
+        $this->authorize('delete', $document);
         $document->delete();
 
         return redirect()->route('documents.index')
-            ->with('success', 'Document supprimé avec succès.');
+            ->with('success', 'Document supprime avec succes.');
     }
 
-    /**
-     * Ouvre le PDF directement depuis l'URL Cloudinary stockée en base.
-     */
     public function view(string $id)
     {
         $url = Document::findOrFail($id)->fichier;
         abort_if(! $url, 404, 'Fichier introuvable.');
+
         return redirect()->away($url);
     }
 
-    /**
-     * Télécharge le PDF via l'URL Cloudinary avec fl_attachment.
-     */
     public function download(string $id)
     {
         $url = Document::findOrFail($id)->fichier;
         abort_if(! $url, 404, 'Fichier introuvable.');
 
-        // fl_attachment force le téléchargement au lieu de l'affichage
         $downloadUrl = str_replace('/upload/', '/upload/fl_attachment/', $url);
+
         return redirect()->away($downloadUrl);
     }
 
-    // ─── API ─────────────────────────────────────────────────────────────────
-
     public function apiIndex(Request $request)
     {
+        $scopedParcoursId = $this->scopedParcoursIdForUser($request->user());
         $query = Document::with(['parcours', 'niveau']);
 
-        if ($request->filled('parcours_id')) $query->where('parcours_id', $request->parcours_id);
-        if ($request->filled('niveau_id'))   $query->where('niveau_id',   $request->niveau_id);
+        if ($scopedParcoursId) {
+            $query->where('parcours_id', $scopedParcoursId);
+        }
+
+        if ($request->filled('parcours_id')) {
+            $requestedParcoursId = (int) $request->input('parcours_id');
+            if (! $scopedParcoursId || $scopedParcoursId === $requestedParcoursId) {
+                $query->where('parcours_id', $requestedParcoursId);
+            }
+        }
+
+        if ($request->filled('niveau_id')) {
+            $query->where('niveau_id', $request->input('niveau_id'));
+        }
 
         return response()->json($query->paginate(9));
     }
@@ -173,59 +250,93 @@ class DocumentController extends Controller
     public function apiStore(Request $request)
     {
         $validated = $request->validate([
-            'titre'       => 'required|string|max:255',
+            'titre' => 'required|string|max:255',
             'description' => 'required|string',
-            'fichier'     => 'required|file|mimes:pdf|max:'.self::MAX_UPLOAD_KB,
+            'fichier' => 'required|file|mimes:pdf|max:'.self::MAX_UPLOAD_KB,
             'parcours_id' => 'required|exists:parcours,id',
-            'niveau_id'   => 'required|exists:niveaux,id',
+            'niveau_id' => [
+                'required',
+                Rule::exists('niveaux', 'id')->where(
+                    fn ($q) => $q->where('parcours_id', $request->input('parcours_id'))
+                ),
+            ],
         ], [
-            'fichier.mimes' => 'Seuls les fichiers PDF sont acceptés.',
-            'fichier.max'   => 'Le fichier dépasse 5 Mo. Compressez-le puis réessayez.',
+            'fichier.mimes' => 'Seuls les fichiers PDF sont acceptes.',
+            'fichier.max' => 'Le fichier depasse 5 Mo. Compressez-le puis reessayez.',
+            'niveau_id.exists' => "L'annee selectionnee ne correspond pas au parcours choisi.",
         ]);
 
+        $this->ensureParcoursAccess($request, (int) $validated['parcours_id']);
         $this->ensureCloudinaryConfigured();
 
         $document = Document::create([
-            'titre'       => $validated['titre'],
+            'titre' => $validated['titre'],
             'description' => $validated['description'],
-            'fichier'     => $this->cloudinaryUpload($request->file('fichier')),
-            'niveau_id'   => $validated['niveau_id'],
+            'fichier' => $this->cloudinaryUpload($request->file('fichier')),
+            'niveau_id' => $validated['niveau_id'],
             'parcours_id' => $validated['parcours_id'],
-            'user_id'     => $request->user()?->id,
+            'user_id' => $request->user()?->id,
         ]);
 
-        return response()->json(['message' => 'Document créé avec succès', 'data' => $document], 201);
+        return response()->json(['message' => 'Document cree avec succes', 'data' => $document], 201);
     }
 
     public function apiUpdate(Request $request, string $id)
     {
         $document = Document::findOrFail($id);
+        $this->ensureParcoursAccess($request, (int) $document->parcours_id);
 
-        $request->validate([
-            'titre'       => 'sometimes|string|max:255',
+        $validated = $request->validate([
+            'titre' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
-            'fichier'     => 'nullable|file|mimes:pdf|max:'.self::MAX_UPLOAD_KB,
-            'niveau_id'   => 'sometimes|exists:niveaux,id',
+            'fichier' => 'nullable|file|mimes:pdf|max:'.self::MAX_UPLOAD_KB,
+            'niveau_id' => 'sometimes|exists:niveaux,id',
             'parcours_id' => 'sometimes|exists:parcours,id',
         ], [
-            'fichier.mimes' => 'Seuls les fichiers PDF sont acceptés.',
-            'fichier.max'   => 'Le fichier dépasse 5 Mo. Compressez-le puis réessayez.',
+            'fichier.mimes' => 'Seuls les fichiers PDF sont acceptes.',
+            'fichier.max' => 'Le fichier depasse 5 Mo. Compressez-le puis reessayez.',
         ]);
+
+        if ($request->filled('parcours_id')) {
+            $this->ensureParcoursAccess($request, (int) $request->input('parcours_id'));
+        }
+
+        if ($request->filled('niveau_id')) {
+            $targetParcoursId = (int) ($request->input('parcours_id', $document->parcours_id));
+            $niveauMatchesParcours = Niveau::query()
+                ->whereKey($request->input('niveau_id'))
+                ->where('parcours_id', $targetParcoursId)
+                ->exists();
+
+            if (! $niveauMatchesParcours) {
+                throw ValidationException::withMessages([
+                    'niveau_id' => "L'annee selectionnee ne correspond pas au parcours choisi.",
+                ]);
+            }
+        }
 
         if ($request->hasFile('fichier')) {
             $this->ensureCloudinaryConfigured();
             $document->fichier = $this->cloudinaryUpload($request->file('fichier'));
+            $document->save();
         }
 
         $document->update($request->except('fichier'));
 
-        return response()->json(['message' => 'Document mis à jour', 'data' => $document]);
+        return response()->json(['message' => 'Document mis a jour', 'data' => $document]);
     }
 
-    public function apiDestroy(string $id)
+    public function apiDestroy(Request $request, string $id)
     {
-        Document::findOrFail($id)->delete();
+        $document = Document::findOrFail($id);
+        $this->ensureParcoursAccess($request, (int) $document->parcours_id);
 
-        return response()->json(['message' => 'Document supprimé']);
+        if ($request->user()) {
+            $this->authorize('delete', $document);
+        }
+
+        $document->delete();
+
+        return response()->json(['message' => 'Document supprime']);
     }
 }

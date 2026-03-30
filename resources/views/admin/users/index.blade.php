@@ -38,6 +38,12 @@
                         <span>{{ session('success') }}</span>
                     </div>
                 @endif
+                @if(session('error'))
+                    <div class="af-alert-success" style="border-color:rgba(192,57,43,.35);border-left-color:#c0392b;background:rgba(192,57,43,.08);">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span>{{ session('error') }}</span>
+                    </div>
+                @endif
 
                 <div class="table-responsive">
                     <table class="af-table">
@@ -45,6 +51,7 @@
                             <tr>
                                 <th>Utilisateur</th>
                                 <th>Email</th>
+                                <th>Parcours</th>
                                 <th>Role</th>
                                 <th>Documents</th>
                                 <th>Droits documents</th>
@@ -75,10 +82,30 @@
                                 </td>
 
                                 <td style="color:var(--slate);font-size:.85rem;">{{ $user->email }}</td>
+                                <td style="min-width:220px;">
+                                    <form method="POST" action="{{ route('admin.users.parcours.update', $user) }}" style="display:flex;gap:.4rem;align-items:center;">
+                                        @csrf
+                                        @method('PATCH')
+                                        <select name="parcours_id" class="af-select" style="padding:.42rem .6rem;font-size:.76rem;">
+                                            <option value="">Aucun</option>
+                                            @foreach($parcoursList as $parcours)
+                                                <option value="{{ $parcours->id }}" @selected((int) $user->parcours_id === (int) $parcours->id)>
+                                                    {{ $parcours->nom }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <button type="submit" class="af-btn af-btn-sm af-btn-ghost" style="white-space:nowrap;">
+                                            <i class="bi bi-check2"></i>
+                                            Enregistrer
+                                        </button>
+                                    </form>
+                                </td>
 
                                 <td>
                                     @if($user->is_admin)
                                         <span class="af-badge-admin">Admin</span>
+                                    @elseif($user->can_manage_documents)
+                                        <span class="af-badge-online">Moderateur</span>
                                     @else
                                         <span class="af-badge-user">Utilisateur</span>
                                     @endif
@@ -133,7 +160,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="8" class="af-table-empty">
+                                <td colspan="9" class="af-table-empty">
                                     <i class="bi bi-people"></i>
                                     Aucun utilisateur trouve.
                                 </td>

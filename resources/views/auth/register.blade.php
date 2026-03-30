@@ -16,6 +16,25 @@
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
+        <!-- Parcours -->
+        <div class="mt-4">
+            <x-input-label for="parcours_id" :value="__('Parcours')" />
+            <select
+                id="parcours_id"
+                name="parcours_id"
+                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                required
+            >
+                <option value="">Selectionnez votre parcours</option>
+                @foreach($parcoursList as $parcours)
+                    <option value="{{ $parcours->id }}" @selected(old('parcours_id') == $parcours->id)>
+                        {{ $parcours->nom }}
+                    </option>
+                @endforeach
+            </select>
+            <x-input-error :messages="$errors->get('parcours_id')" class="mt-2" />
+        </div>
+
         <!-- Password -->
         <div class="mt-4">
             <x-input-label for="password" :value="__('Password')" />

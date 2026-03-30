@@ -209,9 +209,16 @@
                                 <div class="af-field">
                                     <label for="parcours">Parcours</label>
                                     <select name="parcours_id" id="parcours" class="af-select" required>
-                                        <option value="">Selectionner un parcours</option>
+                                        @if($parcours->count() !== 1)
+                                            <option value="">Selectionner un parcours</option>
+                                        @endif
                                         @foreach($parcours as $p)
-                                            <option value="{{ $p->id }}" @selected(old('parcours_id') == $p->id)>{{ $p->nom }}</option>
+                                            <option
+                                                value="{{ $p->id }}"
+                                                @selected(old('parcours_id', $parcours->count() === 1 ? $parcours->first()->id : null) == $p->id)
+                                            >
+                                                {{ $p->nom }}
+                                            </option>
                                         @endforeach
                                     </select>
                                     @error('parcours_id')

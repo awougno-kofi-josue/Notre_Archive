@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'is_admin',
         'can_manage_documents',
+        'parcours_id',
         'last_seen_at',
     ];
 
@@ -39,6 +40,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_admin' => 'boolean',
             'can_manage_documents' => 'boolean',
+            'parcours_id' => 'integer',
             'last_seen_at' => 'datetime',
         ];
     }
@@ -46,5 +48,10 @@ class User extends Authenticatable
     public function documents()
     {
         return $this->hasMany(Document::class);
+    }
+
+    public function parcours()
+    {
+        return $this->belongsTo(Parcours::class);
     }
 }

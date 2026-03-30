@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\UserAdminController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\Moderator\ModeratorController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Document;
 use App\Models\Message;
@@ -69,6 +70,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::middleware(['auth', 'is_moderator'])
+    ->prefix('moderateur')
+    ->name('moderator.')
+    ->group(function () {
+        Route::get('/', [ModeratorController::class, 'index'])->name('dashboard');
+        Route::patch('/users/{user}/document-access', [ModeratorController::class, 'toggleDocumentAccess'])
+            ->name('users.document-access.toggle');
+    });
+
 /*
 |--------------------------------------------------------------------------
 | Espace admin
@@ -76,18 +86,68 @@ Route::middleware('auth')->group(function () {
 */
 Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', function () {
+        $documentsCount = Document::count();
+        $parcoursCount = Parcours::count();
+        $niveauxCount = Niveau::count();
+        $usersCount = User::count();
+        $messagesCount = Message::count();
+        $onlineUsersCount = User::query()
+            ->whereNotNull('last_seen_at')
+            ->where('last_seen_at', '>=', now()->subMinutes(5))
+            ->count();
+        $adminsCount = User::query()->where('is_admin', true)->count();
+        $moderatorsCount = User::query()
+            ->where('is_admin', false)
+            ->where('can_manage_documents', true)
+            ->count();
+        $standardUsersCount = User::query()
+            ->where('is_admin', false)
+            ->where('can_manage_documents', false)
+            ->count();
+        $documentsThisMonth = Document::query()
+            ->whereYear('created_at', now()->year)
+            ->whereMonth('created_at', now()->month)
+            ->count();
+        $messagesThisWeek = Message::query()
+            ->where('created_at', '>=', now()->copy()->startOfWeek())
+            ->count();
+        $recentDocuments = Document::query()
+            ->with(['parcours', 'niveau', 'user'])
+            ->latest()
+            ->limit(6)
+            ->get();
+        $recentUsers = User::query()
+            ->with('parcours')
+            ->latest()
+            ->limit(6)
+            ->get();
+        $recentMessages = Message::query()
+            ->latest()
+            ->limit(6)
+            ->get();
+
         return view('admin.dashboard', [
-            'documentsCount' => Document::count(),
-            'parcoursCount'  => Parcours::count(),
-            'niveauxCount'   => Niveau::count(),
-            'usersCount'     => User::count(),
-            'messagesCount'  => Message::count(),
+            'documentsCount' => $documentsCount,
+            'parcoursCount' => $parcoursCount,
+            'niveauxCount' => $niveauxCount,
+            'usersCount' => $usersCount,
+            'messagesCount' => $messagesCount,
+            'onlineUsersCount' => $onlineUsersCount,
+            'adminsCount' => $adminsCount,
+            'moderatorsCount' => $moderatorsCount,
+            'standardUsersCount' => $standardUsersCount,
+            'documentsThisMonth' => $documentsThisMonth,
+            'messagesThisWeek' => $messagesThisWeek,
+            'recentDocuments' => $recentDocuments,
+            'recentUsers' => $recentUsers,
+            'recentMessages' => $recentMessages,
         ]);
     })->name('dashboard');
 
     Route::resource('parcours', ParcoursAdminController::class)->except('show');
     Route::resource('niveaux', NiveauAdminController::class)->except('show');
     Route::get('/users', [UserAdminController::class, 'index'])->name('users.index');
+    Route::patch('/users/{user}/parcours', [UserAdminController::class, 'updateParcours'])->name('users.parcours.update');
     Route::patch('/users/{user}/document-access', [UserAdminController::class, 'toggleDocumentAccess'])->name('users.document-access.toggle');
     Route::get('/users/create-admin', [RegisteredUserController::class, 'createAdmin'])->name('users.create-admin');
     Route::post('/users/create-admin', [RegisteredUserController::class, 'storeAdmin'])->name('users.store-admin');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Parcours;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +24,9 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        return view('auth.register');
+        $parcoursList = Parcours::query()->orderBy('nom')->get();
+
+        return view('auth.register', compact('parcoursList'));
     }
 
     /**
@@ -35,6 +38,7 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
+            'parcours_id' => ['required', 'exists:parcours,id'],
         ]);
 
         $user = User::create([
@@ -42,6 +46,7 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'is_admin' => false,
+            'parcours_id' => $request->integer('parcours_id'),
         ]);
 
         event(new Registered($user));
@@ -142,6 +147,7 @@ class RegisteredUserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|confirmed|min:6',
+            'parcours_id' => 'required|exists:parcours,id',
         ]);
 
         $user = User::create([
@@ -149,6 +155,7 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => bcrypt($request->password),
             'is_admin' => false,
+            'parcours_id' => $request->integer('parcours_id'),
         ]);
 
         $token = $user->createToken('api_token')->plainTextToken;

@@ -16,6 +16,11 @@
                         <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                             {{ __('Dashboard') }}
                         </x-nav-link>
+                        @if(auth()->user()->can_manage_documents && !auth()->user()->is_admin && auth()->user()->parcours_id)
+                            <x-nav-link :href="route('moderator.dashboard')" :active="request()->routeIs('moderator.*')">
+                                Moderateur
+                            </x-nav-link>
+                        @endif
                         @if(auth()->user()->is_admin)
                             <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">
                                 Admin
@@ -89,6 +94,11 @@
                 <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" >
                     {{ __('Dashboard') }}
                 </x-responsive-nav-link>
+                @if(auth()->user()->can_manage_documents && !auth()->user()->is_admin && auth()->user()->parcours_id)
+                    <x-responsive-nav-link :href="route('moderator.dashboard')" :active="request()->routeIs('moderator.*')">
+                        Moderateur
+                    </x-responsive-nav-link>
+                @endif
                 @if(auth()->user()->is_admin)
                     <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">
                         Admin

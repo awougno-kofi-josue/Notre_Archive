@@ -16,4 +16,9 @@ class Parcours extends Model
     {
         return $this->hasMany(Document::class);
     }
+
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 }

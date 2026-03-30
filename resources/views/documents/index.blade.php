@@ -199,14 +199,21 @@
         <div class="container">
             <form id="documents-filter-form" method="GET" action="{{ route('documents.index') }}"
                   style="display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; font-family:'DM Sans',sans-serif;">
-                <select name="parcours_id" class="af-select">
-                    <option value="">Tous les parcours</option>
-                    @foreach($parcoursList as $parcours)
-                        <option value="{{ $parcours->id }}" {{ request('parcours_id') == $parcours->id ? 'selected' : '' }}>
-                            {{ $parcours->nom }}
-                        </option>
-                    @endforeach
-                </select>
+                @if($lockedParcours)
+                    <input type="hidden" name="parcours_id" value="{{ $lockedParcours->id }}">
+                    <div class="af-select" style="background:#f8f5ef;">
+                        Parcours: {{ $lockedParcours->nom }}
+                    </div>
+                @else
+                    <select name="parcours_id" class="af-select">
+                        <option value="">Tous les parcours</option>
+                        @foreach($parcoursList as $parcours)
+                            <option value="{{ $parcours->id }}" {{ request('parcours_id') == $parcours->id ? 'selected' : '' }}>
+                                {{ $parcours->nom }}
+                            </option>
+                        @endforeach
+                    </select>
+                @endif
 
                 <select name="annee_id" class="af-select">
                     <option value="">Toutes les annees</option>
@@ -228,7 +235,7 @@
                     </select>
                 @endif
 
-                @if(request('parcours_id') || request('annee_id') || request('user_id'))
+                @if((!$lockedParcours) && (request('parcours_id') || request('annee_id') || request('user_id')))
                 <a href="{{ route('documents.index') }}"
                    style="font-size:.78rem; color:var(--slate); text-decoration:none; letter-spacing:.04em;">
                     <i class="bi bi-x-circle me-1"></i>Reinitialiser
