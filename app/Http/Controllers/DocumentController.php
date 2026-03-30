@@ -71,10 +71,12 @@ class DocumentController extends Controller
         ]);
 
         // Upload vers Cloudinary dans le dossier 'notre_archive'
-       $result = Cloudinary::upload($request->file('fichier')->getRealPath(), [
-            'folder' => 'notre_archive']);
-        $path = $result->getSecurePath(); // Récupère l'URL HTTPS complète
-
+       $file = $request->file('fichier');
+            $result = Cloudinary::upload($file->getRealPath(), [
+                'folder' => 'notre_archive'
+            ]);
+            $path = $result->getSecurePath();
+            
         Document::create([
             'titre' => $validated['titre'],
             'description' => $validated['description'],
