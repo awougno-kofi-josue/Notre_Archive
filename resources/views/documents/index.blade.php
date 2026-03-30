@@ -292,10 +292,10 @@
                             <i class="bi bi-tag" style="color:var(--gold);"></i>
                             {{ $doc->documentType?->nom ?? 'Type non defini' }}
                         </div>
-                        <div class="doc-meta">
+                        {{-- <div class="doc-meta">
                             <i class="bi bi-person" style="color:var(--gold);"></i>
                             {{ $doc->user?->name ?? 'Utilisateur inconnu' }}
-                        </div>
+                        </div> --}}
                         <p class="doc-desc">{{ $doc->description }}</p>
                         <div class="doc-actions">
                             @auth

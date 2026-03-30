@@ -77,6 +77,15 @@ class DocumentController extends Controller
         );
     }
 
+    private function shouldAnonymizeDocumentAuthor(?User $user): bool
+    {
+        if (! $user) {
+            return true;
+        }
+
+        return ! $user->is_admin && ! $user->can_manage_documents;
+    }
+
     private function ensureParcoursAccess(Request $request, int $parcoursId): void
     {
         $user = $request->user();
@@ -120,6 +129,7 @@ class DocumentController extends Controller
         $user             = $request->user();
         $scopedParcoursId = $this->scopedParcoursIdForUser($user);
         $canFilterByUser  = $this->canFilterByUser($user);
+        $anonymizeDocumentAuthor = $this->shouldAnonymizeDocumentAuthor($user);
 
         $parcoursList = $scopedParcoursId
             ? Parcours::query()->whereKey($scopedParcoursId)->get()
@@ -141,7 +151,11 @@ class DocumentController extends Controller
         $lockedParcours = $scopedParcoursId ? $parcoursList->first() : null;
         $documentTypes  = DocumentType::query()->orderBy('nom')->get();
 
-        $query = Document::with(['parcours', 'niveau', 'user', 'documentType']);
+        $query = Document::with(
+            $anonymizeDocumentAuthor
+                ? ['parcours', 'niveau', 'documentType']
+                : ['parcours', 'niveau', 'user', 'documentType']
+        );
 
         if ($scopedParcoursId) {
             $query->where('parcours_id', $scopedParcoursId);
@@ -162,7 +176,7 @@ class DocumentController extends Controller
 
         return view('documents.index', compact(
             'documents', 'parcoursList', 'anneesList', 'usersList',
-            'documentTypes', 'canFilterByUser', 'lockedParcours'
+            'documentTypes', 'canFilterByUser', 'lockedParcours', 'anonymizeDocumentAuthor'
         ));
     }
 

@@ -83,11 +83,10 @@
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
 
-                                <x-dropdown-link :href="route('logout')"
-                                        onclick="event.preventDefault();
-                                                    this.closest('form').submit();">
+                                <button type="submit"
+                                        class="block w-full px-4 py-2.5 text-left text-sm text-[#0d1b2a] font-medium hover:bg-[#f7f3ed] hover:text-[#c9a84c] focus:outline-none focus:bg-[#f7f3ed] border-0 border-l-2 border-transparent hover:border-[#c9a84c] bg-transparent transition duration-150 ease-in-out">
                                     {{ __('Log Out') }}
-                                </x-dropdown-link>
+                                </button>
                             </form>
                         </x-slot>
                     </x-dropdown>
@@ -170,11 +169,10 @@
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
 
-                        <x-responsive-nav-link :href="route('logout')"
-                                onclick="event.preventDefault();
-                                            this.closest('form').submit();">
+                        <button type="submit"
+                                class="block w-full ps-3 pe-4 py-2.5 border-0 border-l-4 border-transparent text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 hover:border-white/30 focus:outline-none transition duration-150 ease-in-out text-left bg-transparent">
                             {{ __('Log Out') }}
-                        </x-responsive-nav-link>
+                        </button>
                     </form>
                 </div>
             </div>

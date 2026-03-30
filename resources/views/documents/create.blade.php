@@ -296,7 +296,7 @@
                             <p class="af-help">
                                 Taille maximale: 5 Mo. Si le fichier depasse 5 Mo, compressez-le ici:
                                 <a href="https://www.ilovepdf.com/fr/compresser_pdf" target="_blank" rel="noopener noreferrer">
-                                    https://www.ilovepdf.com/fr/compresser_pdf
+                                    Cliquéz ici pour compresser votre PDF gratuitement
                                 </a>
                             </p>
 
