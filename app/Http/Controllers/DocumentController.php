@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Document;
+use App\Models\DocumentType;
 use App\Models\Niveau;
 use App\Models\Parcours;
 use App\Models\User;
@@ -114,7 +115,8 @@ class DocumentController extends Controller
 
         $lockedParcours = $scopedParcoursId ? $parcoursList->first() : null;
 
-        $query = Document::with(['parcours', 'niveau', 'user']);
+        $documentTypes = DocumentType::query()->orderBy('nom')->get();
+        $query = Document::with(['parcours', 'niveau', 'user', 'documentType']);
 
         if ($scopedParcoursId) {
             $query->where('parcours_id', $scopedParcoursId);
@@ -131,6 +133,10 @@ class DocumentController extends Controller
             $query->where('niveau_id', $request->input('annee_id'));
         }
 
+        if ($request->filled('document_type_id')) {
+            $query->where('document_type_id', $request->input('document_type_id'));
+        }
+
         if ($canFilterByUser && $request->filled('user_id')) {
             $query->where('user_id', $request->input('user_id'));
         }
@@ -142,6 +148,7 @@ class DocumentController extends Controller
             'parcoursList',
             'anneesList',
             'usersList',
+            'documentTypes',
             'canFilterByUser',
             'lockedParcours'
         ));
@@ -158,8 +165,9 @@ class DocumentController extends Controller
         $annees = Niveau::with('parcours')
             ->when($scopedParcoursId, fn ($q) => $q->where('parcours_id', $scopedParcoursId))
             ->get();
+        $documentTypes = DocumentType::query()->orderBy('nom')->get();
 
-        return view('documents.create', compact('parcours', 'annees'));
+        return view('documents.create', compact('parcours', 'annees', 'documentTypes'));
     }
 
     public function store(Request $request)
@@ -167,6 +175,7 @@ class DocumentController extends Controller
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
             'description' => 'required|string',
+            'document_type_id' => 'required|exists:document_types,id',
             'fichier' => 'required|file|mimes:pdf|max:'.self::MAX_UPLOAD_KB,
             'parcours_id' => 'required|exists:parcours,id',
             'niveau_id' => [
@@ -187,6 +196,7 @@ class DocumentController extends Controller
         Document::create([
             'titre' => $validated['titre'],
             'description' => $validated['description'],
+            'document_type_id' => $validated['document_type_id'],
             'fichier' => $this->cloudinaryUpload($request->file('fichier')),
             'niveau_id' => $validated['niveau_id'],
             'parcours_id' => $validated['parcours_id'],
@@ -227,7 +237,7 @@ class DocumentController extends Controller
     public function apiIndex(Request $request)
     {
         $scopedParcoursId = $this->scopedParcoursIdForUser($request->user());
-        $query = Document::with(['parcours', 'niveau']);
+        $query = Document::with(['parcours', 'niveau', 'documentType']);
 
         if ($scopedParcoursId) {
             $query->where('parcours_id', $scopedParcoursId);
@@ -244,6 +254,10 @@ class DocumentController extends Controller
             $query->where('niveau_id', $request->input('niveau_id'));
         }
 
+        if ($request->filled('document_type_id')) {
+            $query->where('document_type_id', $request->input('document_type_id'));
+        }
+
         return response()->json($query->paginate(9));
     }
 
@@ -252,6 +266,7 @@ class DocumentController extends Controller
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
             'description' => 'required|string',
+            'document_type_id' => 'required|exists:document_types,id',
             'fichier' => 'required|file|mimes:pdf|max:'.self::MAX_UPLOAD_KB,
             'parcours_id' => 'required|exists:parcours,id',
             'niveau_id' => [
@@ -272,6 +287,7 @@ class DocumentController extends Controller
         $document = Document::create([
             'titre' => $validated['titre'],
             'description' => $validated['description'],
+            'document_type_id' => $validated['document_type_id'],
             'fichier' => $this->cloudinaryUpload($request->file('fichier')),
             'niveau_id' => $validated['niveau_id'],
             'parcours_id' => $validated['parcours_id'],
@@ -289,6 +305,7 @@ class DocumentController extends Controller
         $validated = $request->validate([
             'titre' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
+            'document_type_id' => 'sometimes|exists:document_types,id',
             'fichier' => 'nullable|file|mimes:pdf|max:'.self::MAX_UPLOAD_KB,
             'niveau_id' => 'sometimes|exists:niveaux,id',
             'parcours_id' => 'sometimes|exists:parcours,id',

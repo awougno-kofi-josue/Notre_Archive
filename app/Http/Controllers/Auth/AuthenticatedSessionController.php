@@ -25,7 +25,7 @@ class AuthenticatedSessionController extends Controller
         $user = Auth::user();
         $defaultRoute = $user->is_admin
             ? route('admin.dashboard')
-            : route('dashboard');
+            : route('documents.index');
 
         return redirect()->intended($defaultRoute);
     }
@@ -74,4 +74,3 @@ class AuthenticatedSessionController extends Controller
         return response()->json($request->user(), 200);
     }
 }
-

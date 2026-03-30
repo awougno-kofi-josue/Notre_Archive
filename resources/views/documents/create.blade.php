@@ -258,6 +258,23 @@
                                 </div>
 
                                 <div class="af-field">
+                                    <label for="document_type_id">Type de document</label>
+                                    <select name="document_type_id" id="document_type_id" class="af-select" required>
+                                        <option value="">Selectionner un type</option>
+                                        @foreach($documentTypes as $documentType)
+                                            <option value="{{ $documentType->id }}" @selected(old('document_type_id') == $documentType->id)>
+                                                {{ $documentType->nom }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('document_type_id')
+                                        <div class="af-error">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="af-row mt-3">
+                                <div class="af-field">
                                     <label for="fichier">Fichier</label>
                                     <input type="file" class="af-file" id="fichier" name="fichier" accept=".pdf" required>
                                     <div id="fichier-size-error" class="af-size-error" role="alert" aria-live="assertive"></div>
@@ -265,6 +282,7 @@
                                         <div class="af-error">{{ $message }}</div>
                                     @enderror
                                 </div>
+                                <div></div>
                             </div>
 
                             <div class="af-field mt-3">

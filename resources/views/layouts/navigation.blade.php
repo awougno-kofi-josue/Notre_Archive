@@ -1,11 +1,23 @@
 <nav x-data="{ open: false }" class="bg-[#0d1b2a] border-b border-[#c9a84c]/40 shadow-sm">
+    @php
+        $currentUser = auth()->user();
+        $isAdmin = (bool) ($currentUser?->is_admin);
+        $isModerator = (bool) ($currentUser?->can_manage_documents && !$currentUser?->is_admin && $currentUser?->parcours_id);
+        $unreadNotificationsCount = $currentUser
+            ? \App\Models\UserNotification::query()
+                ->where('user_id', $currentUser->id)
+                ->where('is_read', false)
+                ->count()
+            : 0;
+    @endphp
+
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ auth()->check() ? route('dashboard') : route('home') }}">
+                    <a href="{{ $isAdmin ? route('admin.dashboard') : (auth()->check() ? route('documents.index') : route('home')) }}">
                         <x-application-logo class="block h-9 w-auto fill-current text-white" />
                     </a>
                 </div>
@@ -13,15 +25,24 @@
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     @auth
-                        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                            {{ __('Dashboard') }}
+                        <x-nav-link :href="route('home')" :active="request()->routeIs('home')">
+                            Accueil
                         </x-nav-link>
-                        @if(auth()->user()->can_manage_documents && !auth()->user()->is_admin && auth()->user()->parcours_id)
+                        <x-nav-link :href="route('documents.index')" :active="request()->routeIs('documents.*')">
+                            Documents
+                        </x-nav-link>
+                        <x-nav-link :href="route('forum.index')" :active="request()->routeIs('forum.*')">
+                            Forum
+                        </x-nav-link>
+                        <x-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
+                            Notifications{{ $unreadNotificationsCount ? ' ('.$unreadNotificationsCount.')' : '' }}
+                        </x-nav-link>
+                        @if($isModerator)
                             <x-nav-link :href="route('moderator.dashboard')" :active="request()->routeIs('moderator.*')">
                                 Moderateur
                             </x-nav-link>
                         @endif
-                        @if(auth()->user()->is_admin)
+                        @if($isAdmin)
                             <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">
                                 Admin
                             </x-nav-link>
@@ -29,6 +50,9 @@
                     @else
                         <x-nav-link :href="route('documents.index')" :active="request()->routeIs('documents.index')">
                             Documents
+                        </x-nav-link>
+                        <x-nav-link :href="route('forum.index')" :active="request()->routeIs('forum.*')">
+                            Forum
                         </x-nav-link>
                     @endauth
                 </div>
@@ -91,15 +115,24 @@
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden bg-[#0d1b2a]">
         <div class="pt-2 pb-3 space-y-1">
             @auth
-                <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" >
-                    {{ __('Dashboard') }}
+                <x-responsive-nav-link :href="route('home')" :active="request()->routeIs('home')">
+                    Accueil
                 </x-responsive-nav-link>
-                @if(auth()->user()->can_manage_documents && !auth()->user()->is_admin && auth()->user()->parcours_id)
+                <x-responsive-nav-link :href="route('documents.index')" :active="request()->routeIs('documents.*')">
+                    Documents
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('forum.index')" :active="request()->routeIs('forum.*')">
+                    Forum
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
+                    Notifications{{ $unreadNotificationsCount ? ' ('.$unreadNotificationsCount.')' : '' }}
+                </x-responsive-nav-link>
+                @if($isModerator)
                     <x-responsive-nav-link :href="route('moderator.dashboard')" :active="request()->routeIs('moderator.*')">
                         Moderateur
                     </x-responsive-nav-link>
                 @endif
-                @if(auth()->user()->is_admin)
+                @if($isAdmin)
                     <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">
                         Admin
                     </x-responsive-nav-link>
@@ -107,6 +140,9 @@
             @else
                 <x-responsive-nav-link :href="route('documents.index')" :active="request()->routeIs('documents.index')">
                     Documents
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('forum.index')" :active="request()->routeIs('forum.*')">
+                    Forum
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('login')">
                     Connexion

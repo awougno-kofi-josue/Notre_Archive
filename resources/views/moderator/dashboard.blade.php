@@ -13,9 +13,14 @@
                     Parcours <span style="color:var(--gold);">{{ $parcours?->nom ?? 'Non defini' }}</span>
                 </h1>
             </div>
-            <a href="{{ route('documents.create') }}" class="af-btn af-btn-primary af-hero-action">
-                <i class="bi bi-plus-lg"></i> Ajouter un document
-            </a>
+            <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+                <a href="{{ route('moderator.messages.index') }}" class="af-btn af-btn-primary af-hero-action">
+                    <i class="bi bi-megaphone"></i> Messages etudiants
+                </a>
+                <a href="{{ route('documents.create') }}" class="af-btn af-btn-primary af-hero-action">
+                    <i class="bi bi-plus-lg"></i> Ajouter un document
+                </a>
+            </div>
         </div>
     </div>
 
@@ -34,6 +39,44 @@
                     <span>{{ session('error') }}</span>
                 </div>
             @endif
+
+            <div class="af-card">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                    <h2 style="font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--navy);margin:0;">
+                        Derniers messages envoyes au parcours
+                    </h2>
+                    <a href="{{ route('moderator.messages.index') }}" class="af-btn af-btn-ghost af-btn-sm">
+                        <i class="bi bi-box-arrow-up-right"></i> Ouvrir la messagerie
+                    </a>
+                </div>
+                <div class="table-responsive">
+                    <table class="af-table">
+                        <thead>
+                            <tr>
+                                <th>Titre</th>
+                                <th>Par</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($recentMessages as $message)
+                                <tr>
+                                    <td style="font-weight:700;">{{ $message->titre }}</td>
+                                    <td>{{ $message->sender?->name ?? '-' }}</td>
+                                    <td style="color:var(--slate);">{{ $message->created_at?->diffForHumans() }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="af-table-empty">
+                                        <i class="bi bi-megaphone"></i>
+                                        Aucun message envoye pour le moment.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
             <div class="af-card">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">

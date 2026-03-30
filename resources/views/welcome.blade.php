@@ -341,8 +341,8 @@
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
                 @auth
                     <li class="nav-item">
-                        <a class="nav-link nav-link-custom" href="{{ route('dashboard') }}">
-                            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                        <a class="nav-link nav-link-custom" href="{{ route('documents.index') }}">
+                            <i class="bi bi-folder2-open me-1"></i>Documents
                         </a>
                     </li>
                     <li class="nav-item ms-lg-2">

@@ -2,11 +2,15 @@
 
 use App\Http\Controllers\Admin\NiveauAdminController;
 use App\Http\Controllers\Admin\ParcoursAdminController;
+use App\Http\Controllers\Admin\ParcoursMessageAdminController;
 use App\Http\Controllers\Admin\UserAdminController;
+use App\Http\Controllers\Admin\DocumentTypeAdminController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\ForumController;
 use App\Http\Controllers\Moderator\ModeratorController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Document;
 use App\Models\Message;
@@ -35,6 +39,8 @@ Route::get('/apropos', function () {
 })->name('apropos');
 
 Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
+Route::get('/forum', [ForumController::class, 'index'])->name('forum.index');
+Route::get('/forum/{thread}', [ForumController::class, 'show'])->name('forum.show');
 
 /*
 |--------------------------------------------------------------------------
@@ -42,17 +48,11 @@ Route::get('/documents', [DocumentController::class, 'index'])->name('documents.
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
-    $documentsCount = Document::count();
-    $parcoursCount = Parcours::count();
-    $niveauxCount = Niveau::count();
-    $usersCount = User::count();
+    if (request()->user()?->is_admin) {
+        return redirect()->route('admin.dashboard');
+    }
 
-    return view('dashboard', compact(
-        'documentsCount',
-        'parcoursCount',
-        'niveauxCount',
-        'usersCount'
-    ));
+    return redirect()->route('documents.index');
 })->name('dashboard');
 
 /*
@@ -65,6 +65,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/documents/{id}/view', [DocumentController::class, 'view'])->name('documents.view');
     Route::get('/documents/{id}/download', [DocumentController::class, 'download'])->name('documents.download');
 
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+
+    Route::get('/forum/create', [ForumController::class, 'create'])->name('forum.create');
+    Route::post('/forum', [ForumController::class, 'store'])->name('forum.store');
+    Route::post('/forum/{thread}/replies', [ForumController::class, 'storeReply'])->name('forum.replies.store');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -75,6 +83,8 @@ Route::middleware(['auth', 'is_moderator'])
     ->name('moderator.')
     ->group(function () {
         Route::get('/', [ModeratorController::class, 'index'])->name('dashboard');
+        Route::get('/messages', [ModeratorController::class, 'messages'])->name('messages.index');
+        Route::post('/messages', [ModeratorController::class, 'storeMessage'])->name('messages.store');
         Route::patch('/users/{user}/document-access', [ModeratorController::class, 'toggleDocumentAccess'])
             ->name('users.document-access.toggle');
     });
@@ -146,11 +156,17 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
 
     Route::resource('parcours', ParcoursAdminController::class)->except('show');
     Route::resource('niveaux', NiveauAdminController::class)->except('show');
+    Route::get('/document-types', [DocumentTypeAdminController::class, 'index'])->name('document-types.index');
+    Route::post('/document-types', [DocumentTypeAdminController::class, 'store'])->name('document-types.store');
+    Route::delete('/document-types/{documentType}', [DocumentTypeAdminController::class, 'destroy'])->name('document-types.destroy');
+
     Route::get('/users', [UserAdminController::class, 'index'])->name('users.index');
     Route::patch('/users/{user}/parcours', [UserAdminController::class, 'updateParcours'])->name('users.parcours.update');
     Route::patch('/users/{user}/document-access', [UserAdminController::class, 'toggleDocumentAccess'])->name('users.document-access.toggle');
     Route::get('/users/create-admin', [RegisteredUserController::class, 'createAdmin'])->name('users.create-admin');
     Route::post('/users/create-admin', [RegisteredUserController::class, 'storeAdmin'])->name('users.store-admin');
+    Route::get('/parcours-messages', [ParcoursMessageAdminController::class, 'index'])->name('parcours-messages.index');
+    Route::delete('/parcours-messages/{parcoursMessage}', [ParcoursMessageAdminController::class, 'destroy'])->name('parcours-messages.destroy');
 
     Route::get('/messages', function () {
         $messages = Message::latest()->paginate(10);

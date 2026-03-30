@@ -359,6 +359,20 @@
                         <span>Demandes et feedback</span>
                     </div>
                 </a>
+                <a href="{{ route('admin.document-types.index') }}" class="ad-action">
+                    <i class="bi bi-tags"></i>
+                    <div>
+                        <strong>Types de documents</strong>
+                        <span>Ajouter / supprimer les types</span>
+                    </div>
+                </a>
+                <a href="{{ route('admin.parcours-messages.index') }}" class="ad-action">
+                    <i class="bi bi-megaphone"></i>
+                    <div>
+                        <strong>Messages moderateurs</strong>
+                        <span>Voir toutes les annonces parcours</span>
+                    </div>
+                </a>
             </div>
 
             <div class="ad-panels">

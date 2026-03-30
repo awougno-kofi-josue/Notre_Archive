@@ -183,15 +183,20 @@
                     Liste des <span style="color:var(--gold);">documents</span>
                 </h1>
             </div>
-            @auth
-                <a href="{{ route('documents.create') }}" class="af-btn-add">
-                    <i class="bi bi-plus-lg"></i> Ajouter un document
+            <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+                <a href="{{ route('home') }}" class="af-btn-add" style="background:#fff;color:var(--navy);">
+                    <i class="bi bi-house"></i> Accueil
                 </a>
-            @else
-                <a href="{{ route('login') }}" class="af-btn-add">
-                    <i class="bi bi-box-arrow-in-right"></i> Se connecter
-                </a>
-            @endauth
+                @auth
+                    <a href="{{ route('documents.create') }}" class="af-btn-add">
+                        <i class="bi bi-plus-lg"></i> Ajouter un document
+                    </a>
+                @else
+                    <a href="{{ route('login') }}" class="af-btn-add">
+                        <i class="bi bi-box-arrow-in-right"></i> Se connecter
+                    </a>
+                @endauth
+            </div>
         </div>
     </div>
 
@@ -224,6 +229,15 @@
                     @endforeach
                 </select>
 
+                <select name="document_type_id" class="af-select">
+                    <option value="">Tous les types</option>
+                    @foreach($documentTypes as $documentType)
+                        <option value="{{ $documentType->id }}" {{ request('document_type_id') == $documentType->id ? 'selected' : '' }}>
+                            {{ $documentType->nom }}
+                        </option>
+                    @endforeach
+                </select>
+
                 @if($canFilterByUser)
                     <select name="user_id" class="af-select">
                         <option value="">Tous les utilisateurs</option>
@@ -235,7 +249,7 @@
                     </select>
                 @endif
 
-                @if((!$lockedParcours) && (request('parcours_id') || request('annee_id') || request('user_id')))
+                @if((!$lockedParcours) && (request('parcours_id') || request('annee_id') || request('document_type_id') || request('user_id')))
                 <a href="{{ route('documents.index') }}"
                    style="font-size:.78rem; color:var(--slate); text-decoration:none; letter-spacing:.04em;">
                     <i class="bi bi-x-circle me-1"></i>Reinitialiser
@@ -273,6 +287,10 @@
                         <div class="doc-meta">
                             <i class="bi bi-calendar3" style="color:var(--gold);"></i>
                             {{ $doc->niveau?->nom ?? 'N/A' }}
+                        </div>
+                        <div class="doc-meta">
+                            <i class="bi bi-tag" style="color:var(--gold);"></i>
+                            {{ $doc->documentType?->nom ?? 'Type non defini' }}
                         </div>
                         <div class="doc-meta">
                             <i class="bi bi-person" style="color:var(--gold);"></i>

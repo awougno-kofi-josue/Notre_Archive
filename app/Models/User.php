@@ -54,4 +54,24 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Parcours::class);
     }
+
+    public function sentParcoursMessages()
+    {
+        return $this->hasMany(ParcoursMessage::class, 'sender_id');
+    }
+
+    public function userNotifications()
+    {
+        return $this->hasMany(UserNotification::class);
+    }
+
+    public function forumThreads()
+    {
+        return $this->hasMany(ForumThread::class);
+    }
+
+    public function forumReplies()
+    {
+        return $this->hasMany(ForumReply::class);
+    }
 }

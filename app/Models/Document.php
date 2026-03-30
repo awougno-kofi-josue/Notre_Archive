@@ -9,6 +9,7 @@ class Document extends Model
     protected $fillable = [
         'titre', 
         'description', 
+        'document_type_id',
         'fichier', 
         'niveau_id', 
         'parcours_id', 
@@ -28,5 +29,10 @@ class Document extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function documentType()
+    {
+        return $this->belongsTo(DocumentType::class);
     }
 }
