@@ -123,15 +123,18 @@
             display:flex;
             gap:.6rem;
             flex-wrap:wrap;
+            align-items:center;
         }
-        .doc-actions form { flex:1; }
+        .doc-actions form { 
+            display:flex;
+            margin:0;
+        }
         .doc-btn {
-            width:100%;
             display:inline-flex;
             align-items:center;
             justify-content:center;
             gap:.4rem;
-            padding:.55rem .5rem;
+            padding:.55rem .75rem;
             border-radius:3px;
             font-size:.78rem;
             font-weight:600;
@@ -139,11 +142,14 @@
             text-transform:uppercase;
             text-decoration:none;
             transition:background .2s;
+            white-space:nowrap;
         }
         .doc-btn-open  { background:var(--navy); color:#fff; }
         .doc-btn-open:hover { background:#1b3a6b; color:#fff; }
         .doc-btn-dl    { background:var(--gold); color:var(--navy); }
         .doc-btn-dl:hover { background:#b8973f; color:var(--navy); }
+        .doc-btn-edit  { background:#3498db; color:#fff; }
+        .doc-btn-edit:hover { background:#2980b9; color:#fff; }
         .doc-btn-delete { background:#c0392b; color:#fff; border:none; cursor:pointer; }
         .doc-btn-delete:hover { background:#a93226; color:#fff; }
 
@@ -313,6 +319,11 @@
                                     <i class="bi bi-download"></i> Telecharger
                                 </a>
                             @endauth
+                            @if(auth()->check() && (auth()->user()->is_admin || (auth()->user()->can_manage_documents && auth()->user()->parcours_id == $doc->parcours_id)))
+                                <a href="{{ route('documents.edit', $doc->id) }}" class="doc-btn doc-btn-edit">
+                                    <i class="bi bi-pencil"></i> Modifier
+                                </a>
+                            @endif
                             @can('delete', $doc)
                                 <form method="POST" action="{{ route('documents.destroy', $doc) }}" onsubmit="return confirm('Supprimer ce document ?');">
                                     @csrf

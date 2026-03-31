@@ -102,6 +102,33 @@ class DocumentController extends Controller
     }
 
     /**
+     * Vérifie que l'utilisateur connecté peut modifier ce document.
+     * - Admin  : toujours autorisé
+     * - Modérateur : peut modifier les documents de son parcours
+     * - Autres : 403
+     */
+    private function ensureCanUpdate(Request $request, Document $document): void
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            abort(403, 'Action non autorisée.');
+        }
+
+        if ($user->is_admin) {
+            return;
+        }
+
+        if ($user->can_manage_documents && $user->parcours_id !== null) {
+            if ((int) $document->parcours_id === (int) $user->parcours_id) {
+                return;
+            }
+        }
+
+        abort(403, 'Vous ne pouvez modifier que les documents de votre parcours.');
+    }
+
+    /**
      * Vérifie que l'utilisateur connecté peut supprimer ce document.
      * - Admin  : toujours autorisé
      * - Auteur : peut supprimer son propre document
@@ -232,6 +259,52 @@ class DocumentController extends Controller
 
         return redirect()->route('documents.index')
             ->with('success', 'Document PDF créé et sauvegardé sur Cloudinary.');
+    }
+
+    public function edit(Request $request, Document $document)
+    {
+        $this->ensureCanUpdate($request, $document);
+
+        $scopedParcoursId = $this->scopedParcoursIdForUser($request->user());
+
+        $parcours = $scopedParcoursId
+            ? Parcours::query()->whereKey($scopedParcoursId)->get()
+            : Parcours::all();
+
+        $annees = Niveau::with('parcours')
+            ->when($scopedParcoursId, fn ($q) => $q->where('parcours_id', $scopedParcoursId))
+            ->get();
+
+        $documentTypes = DocumentType::query()->orderBy('nom')->get();
+
+        return view('documents.edit', compact('document', 'parcours', 'annees', 'documentTypes'));
+    }
+
+    public function update(Request $request, Document $document)
+    {
+        $this->ensureCanUpdate($request, $document);
+
+        $validated = $request->validate([
+            'titre'            => 'required|string|max:255',
+            'description'      => 'required|string',
+            'document_type_id' => 'required|exists:document_types,id',
+            'niveau_id'        => [
+                'required',
+                Rule::exists('niveaux', 'id')->where(
+                    fn ($q) => $q->where('parcours_id', $document->parcours_id)
+                ),
+            ],
+        ]);
+
+        $document->update([
+            'titre'            => $validated['titre'],
+            'description'      => $validated['description'],
+            'document_type_id' => $validated['document_type_id'],
+            'niveau_id'        => $validated['niveau_id'],
+        ]);
+
+        return redirect()->route('documents.index')
+            ->with('success', 'Document modifié avec succès.');
     }
 
     public function destroy(Request $request, Document $document)
