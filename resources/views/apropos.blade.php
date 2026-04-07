@@ -4,7 +4,7 @@
             À propos
         </h2>
     </x-slot>
-
+<x-ad/>
     {{-- ── STYLES PARTAGÉS ── --}}
     @once
     <style>

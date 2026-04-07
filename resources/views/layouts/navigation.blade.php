@@ -1,3 +1,4 @@
+<x-ad/>
 <nav x-data="{ open: false }" class="bg-[#0d1b2a] border-b border-[#c9a84c]/40 shadow-sm">
     @php
         $currentUser = auth()->user();

@@ -5,7 +5,7 @@
             Contactez-nous
         </h2>
     </x-slot>
-
+<x-ad/>
     @once
     <style>
         :root { --navy:#0d1b2a; --gold:#c9a84c; --cream:#f7f3ed; --slate:#4a5568; }

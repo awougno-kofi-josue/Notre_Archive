@@ -5,6 +5,7 @@
             Liste des documents
         </h2>
     </x-slot>
+    <x-ad/>
 
     @once
     <style>
@@ -125,7 +126,7 @@
             flex-wrap:wrap;
             align-items:center;
         }
-        .doc-actions form { 
+        .doc-actions form {
             display:flex;
             margin:0;
         }

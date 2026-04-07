@@ -6,6 +6,7 @@
             Ajouter un document
         </h2>
     </x-slot>
+    <x-ad/>
 
     @once
     <style>

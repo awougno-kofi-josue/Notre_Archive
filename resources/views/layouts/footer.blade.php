@@ -38,6 +38,7 @@
         margin: 0 .5rem;
     }
 </style>
+<x-ad/>
 
 <footer class="af-footer">
     <div class="container">

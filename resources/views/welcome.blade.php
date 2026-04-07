@@ -12,7 +12,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-
+<meta name="google-adsense-account" content="ca-pub-2193452524889728">
     <style>
         :root {
             --navy:   #0d1b2a;
@@ -391,15 +391,15 @@
 
                 <div class="hero-stats row g-4 mt-1">
                     <div class="col-auto">
-                        <div class="stat-number">500+</div>
+                        <div class="stat-number">50+</div>
                         <div class="stat-label">Documents</div>
                     </div>
                     <div class="col-auto">
-                        <div class="stat-number">12</div>
+                        <div class="stat-number">3</div>
                         <div class="stat-label">Parcours</div>
                     </div>
                     <div class="col-auto">
-                        <div class="stat-number">8</div>
+                        <div class="stat-number">9</div>
                         <div class="stat-label">Années couvertes</div>
                     </div>
                 </div>

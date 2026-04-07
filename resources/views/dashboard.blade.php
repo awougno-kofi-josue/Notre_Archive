@@ -4,7 +4,7 @@
             Tableau de bord
         </h2>
     </x-slot>
-
+<x-ad/>
     @once
     <style>
         :root {
